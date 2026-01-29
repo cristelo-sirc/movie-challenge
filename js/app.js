@@ -467,14 +467,19 @@ Try it yourself: https://cristelo-sirc.github.io/movie-challenge/
 
 #5000MovieChallenge`;
 
-        // Try native share API first (mobile)
+        // Try native share API first (works best on iOS/mobile)
         if (navigator.share) {
             navigator.share({
                 title: '5000 Movie Challenge',
-                text: shareText
-            }).catch(() => {
-                // Fall back to clipboard
-                copyShareText(shareText);
+                text: shareText,
+                url: 'https://cristelo-sirc.github.io/movie-challenge/'
+            }).then(() => {
+                showToast('Shared!', 'success');
+            }).catch((err) => {
+                // User cancelled or share failed - try clipboard
+                if (err.name !== 'AbortError') {
+                    copyShareText(shareText);
+                }
             });
         } else {
             copyShareText(shareText);
