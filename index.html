@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Track your movie watching journey through 5,000 films from 1980 to 2025">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>5000 Movie Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Header HUD -->
+        <header class="hud">
+            <div class="hud-left">
+                <button class="icon-btn" id="menuBtn" aria-label="Menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="counter">
+                    <span id="currentCount" class="count-current">0</span>
+                    <span class="count-separator">/</span>
+                    <span class="count-total">5000</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="decade-badge" id="decadeBadge">1980s</div>
+                <button class="icon-btn" id="shareBtn" aria-label="Share Results">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Card Stack Container -->
+        <main class="card-stack-container">
+            <div class="card-stack" id="cardStack">
+                <!-- Cards will be rendered here by JavaScript -->
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState">
+                <div class="spinner"></div>
+                <p>Loading movies...</p>
+            </div>
+
+            <!-- Completion State -->
+            <div class="completion-state hidden" id="completionState">
+                <div class="completion-icon">🎬</div>
+                <h2>Challenge Complete!</h2>
+                <p id="completionStats"></p>
+                <div class="completion-actions">
+                    <button class="btn btn-primary" id="shareResultsBtn">Share Results</button>
+                    <button class="btn btn-secondary" id="resetBtn">Start Over</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Action Buttons -->
+        <footer class="action-bar">
+            <button class="action-btn action-skip" id="skipBtn" aria-label="Haven't Seen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <button class="action-btn action-undo" id="undoBtn" aria-label="Undo" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
+                    <polyline points="3 10 8 5 3 10 8 15"></polyline>
+                </svg>
+            </button>
+            <button class="action-btn action-seen" id="seenBtn" aria-label="Seen It">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </button>
+        </footer>
+
+        <!-- Keyboard Hints (Desktop) -->
+        <div class="keyboard-hints">
+            <span class="hint"><kbd>←</kbd> Skip</span>
+            <span class="hint"><kbd>Z</kbd> Undo</span>
+            <span class="hint"><kbd>→</kbd> Seen</span>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal-overlay hidden" id="modalOverlay">
+            <div class="modal" id="settingsModal">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button class="icon-btn" id="closeModalBtn" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Progress Stats -->
+                    <div class="settings-section">
+                        <h4>Your Progress</h4>
+                        <div class="stats-grid" id="statsGrid">
+                            <div class="stat-item">
+                                <span class="stat-value" id="statSeen">0</span>
+                                <span class="stat-label">Seen</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="statSkipped">0</span>
+                                <span class="stat-label">Skipped</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="statRemaining">5000</span>
+                                <span class="stat-label">Remaining</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export/Import -->
+                    <div class="settings-section">
+                        <h4>Sync Across Devices</h4>
+                        <p class="section-desc">Copy your progress code to continue on another device.</p>
+                        <div class="sync-actions">
+                            <button class="btn btn-secondary" id="exportBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+                                    height="16">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                Export Code
+                            </button>
+                            <button class="btn btn-secondary" id="importBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
+                                    height="16">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Import Code
+                            </button>
+                        </div>
+                        <textarea class="code-input hidden" id="codeInput"
+                            placeholder="Paste your progress code here..."></textarea>
+                        <div class="code-actions hidden" id="codeActions">
+                            <button class="btn btn-small" id="copyCodeBtn">Copy</button>
+                            <button class="btn btn-small btn-primary" id="applyCodeBtn">Apply</button>
+                        </div>
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="settings-section">
+                        <h4>Danger Zone</h4>
+                        <button class="btn btn-danger" id="resetProgressBtn">Reset All Progress</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast hidden" id="toast"></div>
+    </div>
+
+    <script src="data/movies.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/sliding-window.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Local scripts (not needed for deployment)
+scripts/
+
+# Data builder (not needed for end users)
+data-builder.html
