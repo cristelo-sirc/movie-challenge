@@ -463,6 +463,8 @@
 📊 Progress: ${progress.current.toLocaleString()} / 5,000
 ${bestDecade ? `🏆 Favorite decade: ${bestDecade[0]} (${bestDecade[1]} seen)` : ''}
 
+Try it yourself: https://cristelo-sirc.github.io/movie-challenge/
+
 #5000MovieChallenge`;
 
         // Try native share API first (mobile)
