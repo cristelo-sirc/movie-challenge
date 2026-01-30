@@ -38,6 +38,9 @@
         statSeen: document.getElementById('statSeen'),
         statSkipped: document.getElementById('statSkipped'),
         statRemaining: document.getElementById('statRemaining'),
+        // Action bar counters
+        seenCounter: document.getElementById('seenCounter'),
+        notSeenCounter: document.getElementById('notSeenCounter'),
         // V2.0 Elements
         soundToggleBtn: document.getElementById('soundToggleBtn'),
         soundOnIcon: document.getElementById('soundOnIcon'),
@@ -117,6 +120,10 @@
 
         // Update undo button state
         elements.undoBtn.disabled = !data.canUndo;
+
+        // Update action bar counters (seen/not seen tally)
+        elements.seenCounter.textContent = data.progress.seen.toLocaleString();
+        elements.notSeenCounter.textContent = data.progress.notSeen.toLocaleString();
 
         // Render cards
         renderCards(data.window);

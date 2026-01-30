@@ -12,7 +12,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Press+Start+2P&family=Rock+Salt&family=Orbitron:wght@500;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=9">
 </head>
 
 <body>
@@ -95,6 +95,7 @@
 
         <!-- Action Buttons -->
         <footer class="action-bar">
+            <span class="action-counter counter-skip" id="notSeenCounter">0</span>
             <button class="action-btn action-skip" id="skipBtn" aria-label="Haven't Seen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -112,6 +113,7 @@
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
             </button>
+            <span class="action-counter counter-seen" id="seenCounter">0</span>
         </footer>
 
         <!-- Keyboard Hints (Desktop) -->
