@@ -963,6 +963,7 @@ kbd {
     inset: 0;
     /* Removed backdrop-filter to prevent key rendering issues on iOS */
     background: rgba(0, 0, 0, 0.85);
+    z-index: -1;
 }
 
 #backupModal .modal-content {
