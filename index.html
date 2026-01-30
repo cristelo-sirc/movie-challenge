@@ -157,17 +157,11 @@
 
                     <!-- Export/Import -->
                     <div class="settings-section">
-                        <h4>Sync Across Devices</h4>
-                        <p class="section-desc">Copy your progress code to continue on another device.</p>
+                        <h4>Backup & Sync</h4>
+                        <p class="section-desc">Save your progress with QR code or sync across devices.</p>
                         <div class="sync-actions">
-                            <button class="btn btn-secondary" id="exportBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                                    height="16">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                Export Code
+                            <button class="btn btn-primary" id="backupBtn">
+                                💾 QR Backup
                             </button>
                             <button class="btn btn-secondary" id="importBtn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
@@ -179,6 +173,12 @@
                                 Import Code
                             </button>
                         </div>
+                        <details class="advanced-export">
+                            <summary>Advanced: Export as text code</summary>
+                            <button class="btn btn-secondary btn-small" id="exportBtn" style="margin-top: 8px;">
+                                Export Code
+                            </button>
+                        </details>
                         <textarea class="code-input hidden" id="codeInput"
                             placeholder="Paste your progress code here..."></textarea>
                         <div class="code-actions hidden" id="codeActions">

@@ -55,7 +55,8 @@
         shareEmail: document.getElementById('shareEmail'),
         shareSMS: document.getElementById('shareSMS'),
         shareDownload: document.getElementById('shareDownload'),
-        shareLink: document.getElementById('shareLink')
+        shareLink: document.getElementById('shareLink'),
+        backupBtn: document.getElementById('backupBtn')
     };
 
     // Touch/Drag State
@@ -625,6 +626,14 @@
         elements.importBtn.addEventListener('click', handleImportStart);
         elements.copyCodeBtn.addEventListener('click', handleCopyCode);
         elements.applyCodeBtn.addEventListener('click', handleApplyCode);
+
+        // QR Backup button
+        if (elements.backupBtn) {
+            elements.backupBtn.addEventListener('click', () => {
+                closeModal();
+                openBackupModal();
+            });
+        }
 
         // Reset in modal
         elements.resetProgressBtn.addEventListener('click', () => {

@@ -844,6 +844,21 @@ kbd {
     border-color: var(--accent-seen);
 }
 
+.advanced-export {
+    margin-top: 12px;
+    font-size: 0.8rem;
+}
+
+.advanced-export summary {
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.advanced-export summary:hover {
+    color: var(--text-secondary);
+}
+
 .code-actions {
     display: flex;
     justify-content: flex-end;
