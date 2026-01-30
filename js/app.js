@@ -105,35 +105,47 @@
      * Private mode may not persist localStorage reliably
      */
     function checkPrivateBrowsing() {
-        try {
-            // Test if localStorage actually works
-            const testKey = '__private_test__';
-            localStorage.setItem(testKey, '1');
-            localStorage.removeItem(testKey);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
 
-            // Additional check: In Safari private mode, localStorage quota is often 0
-            // or data doesn't persist. We can detect this by checking if our saved state is empty
-            // when navigator suggests it shouldn't be (heuristic check).
+        // Only check on iOS Safari where private browsing is the issue
+        if (!isIOS || !isSafari) return;
 
-            // Check if Safari private mode indicators exist
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-
-            if (isIOS && isSafari) {
-                // Try to detect if we're in private mode by checking storage estimate
-                // or seeing if the indexedDB is restricted
-                try {
-                    const db = indexedDB.open('private_test');
-                    db.onerror = function () {
-                        // indexedDB blocked - likely private mode
-                        showPrivateBrowsingWarning();
-                    };
-                } catch (e) {
+        // Method 1: Use Storage API to check quota (most reliable)
+        if (navigator.storage && navigator.storage.estimate) {
+            navigator.storage.estimate().then(estimate => {
+                // Private mode typically has very limited quota (< 100MB)
+                // Normal mode usually has several GB
+                if (estimate.quota && estimate.quota < 120000000) {
                     showPrivateBrowsingWarning();
                 }
-            }
+            }).catch(() => {
+                // If estimate fails, try other methods
+                checkPrivateBrowsingFallback();
+            });
+        } else {
+            checkPrivateBrowsingFallback();
+        }
+    }
+
+    /**
+     * Fallback detection for older browsers
+     */
+    function checkPrivateBrowsingFallback() {
+        try {
+            // Try to use a significant amount of localStorage
+            const testKey = '__private_test__';
+            const testData = new Array(100).join('a'); // 100 chars
+            localStorage.setItem(testKey, testData);
+            localStorage.removeItem(testKey);
+
+            // Also check if indexedDB is restricted
+            const db = indexedDB.open('private_test');
+            db.onerror = function () {
+                showPrivateBrowsingWarning();
+            };
         } catch (e) {
-            // localStorage is completely blocked - definitely private mode
+            // localStorage blocked = definitely private mode
             showPrivateBrowsingWarning();
         }
     }
