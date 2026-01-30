@@ -18,10 +18,36 @@ const AudioManager = (function () {
 
         try {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // iOS Safari: Resume immediately after user gesture
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            // Play a silent buffer to fully unlock audio on iOS
+            const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+            const source = audioContext.createBufferSource();
+            source.buffer = silentBuffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+
             isInitialized = true;
+            console.log('Audio initialized successfully');
         } catch (e) {
             console.warn('Web Audio API not supported:', e);
             isEnabled = false;
+        }
+    }
+
+    /**
+     * Ensure audio is ready (call before playing)
+     */
+    function ensureReady() {
+        if (!audioContext) {
+            init();
+        }
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
         }
     }
 
@@ -46,8 +72,9 @@ const AudioManager = (function () {
      * Create a simple oscillator sound
      */
     function playTone(frequency, duration, type = 'sine', volume = 0.3) {
-        if (!isEnabled || !audioContext) return;
-        resume();
+        if (!isEnabled) return;
+        ensureReady();
+        if (!audioContext) return;
 
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -71,8 +98,9 @@ const AudioManager = (function () {
      * Create noise burst (for whoosh effects)
      */
     function playNoise(duration, volume = 0.15) {
-        if (!isEnabled || !audioContext) return;
-        resume();
+        if (!isEnabled) return;
+        ensureReady();
+        if (!audioContext) return;
 
         const bufferSize = audioContext.sampleRate * duration;
         const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
