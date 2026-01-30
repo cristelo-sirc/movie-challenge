@@ -941,10 +941,64 @@ kbd {
 }
 
 /* ===== Backup Modal Styles ===== */
+#backupModal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 250;
+    background: none;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    border: none;
+    animation: none;
+}
+
+#backupModal .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+#backupModal .modal-content {
+    position: relative;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideUp 0.3s var(--ease-out-expo);
+}
+
 .backup-modal {
     max-width: 360px;
     text-align: center;
     padding: 24px;
+    position: relative;
+}
+
+.backup-modal .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.backup-modal .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .backup-modal h2 {
