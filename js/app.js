@@ -361,7 +361,7 @@
         const halfStar = rating % 2 >= 1;
         const stars = '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(5 - fullStars - (halfStar ? 1 : 0));
 
-        // Truncate overview for display
+        // Truncate overview for display on back
         const overview = movie.overview || 'No description available.';
         const truncatedOverview = overview.length > 300 ? overview.substring(0, 297) + '...' : overview;
 
@@ -379,6 +379,9 @@
                         <h2 class="card-title">${escapeHtml(movie.title)}</h2>
                         <p class="card-year">${movie.year}</p>
                     </div>
+                    
+                    <button class="info-btn" aria-label="More Info">Info</button>
+
                     <div class="swipe-indicator seen">SEEN</div>
                     <div class="swipe-indicator skip">NOPE</div>
                 </div>
@@ -399,26 +402,28 @@
             </div>
         `;
 
-        // Add tap-to-flip listener (only for top card)
+        // Add flip logic (only for top card interactions)
         if (isTop) {
-            card.addEventListener('click', handleCardFlip);
+            // Find info button and attach click handler
+            const infoBtn = card.querySelector('.info-btn');
+            if (infoBtn) {
+                infoBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card drag
+                    card.classList.toggle('flipped');
+                });
+            }
+
+            // Clicking back of card flips it back
+            const backFace = card.querySelector('.card-back');
+            if (backFace) {
+                backFace.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    card.classList.remove('flipped');
+                });
+            }
         }
 
         return card;
-    }
-
-    /**
-     * Handle card flip on tap
-     */
-    function handleCardFlip(e) {
-        // Don't flip if user is dragging
-        if (dragState.isDragging) return;
-
-        // Don't flip if clicking on action buttons
-        if (e.target.closest('.action-btn')) return;
-
-        const card = e.currentTarget;
-        card.classList.toggle('flipped');
     }
 
     /**
