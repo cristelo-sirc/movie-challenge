@@ -330,15 +330,14 @@
         // Clear existing cards
         elements.cardStack.innerHTML = '';
 
-        // Render in reverse order so first item is on top
-        movies.slice().reverse().forEach((movie, reverseIndex) => {
-            const index = movies.length - 1 - reverseIndex;
+        // Render in direct order (First item is Top Card due to CSS z-index)
+        movies.forEach((movie, index) => {
             const card = createCardElement(movie, index === 0);
             elements.cardStack.appendChild(card);
         });
 
-        // Attach drag listeners to top card
-        const topCard = elements.cardStack.lastElementChild;
+        // Attach drag listeners to top card (First Child)
+        const topCard = elements.cardStack.firstElementChild;
         if (topCard) {
             attachDragListeners(topCard);
         }
@@ -415,12 +414,7 @@
                 infoBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    // DEBUG
-                    showToast('Info Clicked', 'success');
                     card.classList.toggle('flipped');
-                    // DEBUG
-                    if (card.classList.contains('flipped')) showToast('Flipped: ON', 'info');
-                    else showToast('Flipped: OFF', 'info');
                 });
             }
 
