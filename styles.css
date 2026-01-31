@@ -243,6 +243,142 @@ body {
     cursor: grabbing;
 }
 
+/* Inner container for 3D flip */
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-style: preserve-3d;
+    border-radius: 20px;
+}
+
+/* Flipped state */
+.movie-card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Front and Back Faces */
+.card-front,
+.card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Front Face (Poster) */
+.card-front {
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Back Face (Info) */
+.card-back {
+    background: #1a1a1a;
+    color: white;
+    transform: rotateY(180deg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Info content styling */
+.card-back-header {
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 12px;
+}
+
+.card-back-title {
+    font-family: var(--font-header);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.card-back-year {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.card-back-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.rating-stars {
+    color: #FFD700;
+    font-size: 1.1rem;
+}
+
+.rating-value {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.card-back-overview {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    overflow-y: auto;
+    flex-grow: 1;
+    mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+}
+
+.card-back-footer {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+/* Info Button */
+.info-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.info-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: white;
+    transform: scale(1.05);
+}
+
+.movie-card.flipped .info-btn {
+    display: none;
+}
+
 .movie-card.dragging {
     transition: none;
 }
