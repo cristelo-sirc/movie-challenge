@@ -407,8 +407,14 @@
             // Find info button and attach click handler
             const infoBtn = card.querySelector('.info-btn');
             if (infoBtn) {
+                // Prevent drag from starting when touching the button
+                const stopProp = (e) => e.stopPropagation();
+                infoBtn.addEventListener('mousedown', stopProp);
+                infoBtn.addEventListener('touchstart', stopProp, { passive: true });
+
                 infoBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent card drag
+                    e.stopPropagation();
+                    e.preventDefault();
                     card.classList.toggle('flipped');
                 });
             }
