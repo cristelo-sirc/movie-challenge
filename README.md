@@ -9,18 +9,25 @@ A Tinder-style movie discovery app that challenges you to track your film histor
 
 ### 🎞 Massive Dataset
 *   **5,000+ Movies:** Curated selection of hits, cult classics, and hidden gems.
-*   **Rich Metadata:** Flip the card to see **Runtime**, **Director**, **Top Cast**, and **Synopsis**.
+*   **Rich Metadata:** Tap any card to flip it and see **Rating**, **Runtime**, and **Synopsis**.
 *   **Decade Filtering:** Jump straight to the 80s, 90s, 2000s, 2010s, or 2020s.
 
-### ⚡️ Interactive Experience
-*   **Swipe Interface:** Swipe **Right** for "Seen It" (Green), **Left** for "Haven't Seen" (Red).
-*   **3D Card Flip:** Tap the "Info" button to reveal detailed movie info on the back.
-*   **Responsive:** optimized for both Desktop (Keyboard shortcuts) and **Mobile** (Touch gestures).
+### 🎨 Dynamic Themes
+*   **Time Travel UI:** The interface transforms as you swipe through time.
+    *   **1980s:** Neon Synthwave grid with magenta glow.
+    *   **1990s:** Dark Grunge with distressed textures.
+    *   **2000s:** Y2K Matrix digital aesthetic.
+    *   **2010s/20s:** Modern, clean dark mode with vibrant gradients.
+
+### 🔊 Immersive Audio
+*   **Synthesized Sound Engine:** Custom sound effects generated in real-time using the **Web Audio API**.
+*   **Feedback:** Satisfying "Ding" for Seen, "Thud" for Nope, and Fanfare for milestones.
+*   **Toggle:** Optional sound with easy on-screen mute button.
 
 ### 🎮 Gamification
-*   **Streaks:** Build up a "Seen" streak to unlock fire animations.
-*   **Ranks:** Level up from "Casual Viewer" to "Cinephile" as you rate more movies.
-*   **Retrowave Aesthetics:** 80s-inspired neon UI with satisfying sound effects.
+*   **Streaks:** Build up a "Seen" streak (🔥) to unlock fire animations and sounds.
+*   **Ranks:** Level up from "Extra" to "Legend" as you rate more movies.
+*   **Milestones:** Celebrate hitting 10, 50, 100+ movies seen with confetti explosions.
 
 ### 💾 Backup & Sync
 *   **Local First:** All progress is saved automatically to your browser.
@@ -29,7 +36,7 @@ A Tinder-style movie discovery app that challenges you to track your film histor
 
 ## 🛠 Tech Stack
 Built for speed and simplicity using modern web standards.
-*   **Core:** Vanilla JavaScript (ES6+), HTML5, CSS3.
+*   **Core:** Vanilla JavaScript (ES6+), HTML5, CSS3, Web Audio API.
 *   **Storage:** `localStorage` for persistence, `LZString` for compressed QR codes.
 *   **Performance:**
     *   Zero frameworks (No React/Vue/Angular bloat).
