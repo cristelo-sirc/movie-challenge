@@ -89,57 +89,66 @@
      * Initialize the application
      */
     function init() {
-        // Initialize config system first
-        config = ConfigLoader.init();
+        try {
+            // Initialize config system first
+            config = ConfigLoader.init();
 
-        // Initialize ItemManager
-        ItemManager.init();
+            // Initialize ItemManager
+            ItemManager.init();
 
-        // Initialize StorageManager with config
-        StorageManager.init();
+            // Initialize StorageManager with config
+            StorageManager.init();
 
-        // Check for URL-based progress first (for shared links)
-        let savedState = StorageManager.checkURLForProgress();
+            // Check for URL-based progress first (for shared links)
+            let savedState = StorageManager.checkURLForProgress();
 
-        if (savedState) {
-            // Progress restored from URL - save it locally
-            StorageManager.save(savedState);
-            showToast('Progress restored from link!', 'success');
-        } else {
-            // Load saved state from localStorage
-            savedState = StorageManager.load();
+            if (savedState) {
+                // Progress restored from URL - save it locally
+                StorageManager.save(savedState);
+                showToast('Progress restored from link!', 'success');
+            } else {
+                // Load saved state from localStorage
+                savedState = StorageManager.load();
+            }
+
+            // Initialize v2.0 Managers
+            ThemeManager.init();
+            GamificationManager.init(savedState.seen?.length || 0, savedState.bestStreak || 0);
+
+            // Initialize backup reminder tracking
+            const totalRated = savedState.seen.length + savedState.notSeen.length;
+            const reminderInterval = (config.gamification && config.gamification.backupReminderInterval) || 100;
+            lastBackupReminder = Math.floor(totalRated / reminderInterval) * reminderInterval;
+
+            // Get items from ItemManager
+            const items = ItemManager.getAll();
+
+            // Initialize the sliding window
+            SlidingWindow.init(items, savedState, {
+                onUpdate: handleUpdate,
+                onComplete: handleComplete
+            });
+
+            // Set up event listeners
+            setupEventListeners();
+
+            // Initialize audio on first user interaction
+            document.addEventListener('click', initAudioOnce, { once: true });
+            document.addEventListener('touchstart', initAudioOnce, { once: true });
+
+            // Check for private browsing mode
+            checkPrivateBrowsing();
+
+            // Hide loading, show cards
+            elements.loadingState.classList.add('hidden');
+        } catch (error) {
+            console.error('Init error:', error);
+            // Show error on page
+            const loadingEl = document.getElementById('loadingState');
+            if (loadingEl) {
+                loadingEl.innerHTML = '<p style="color:red;padding:20px;text-align:center;">Error: ' + error.message + '<br><br>Please refresh the page.</p>';
+            }
         }
-
-        // Initialize v2.0 Managers
-        ThemeManager.init();
-        GamificationManager.init(savedState.seen?.length || 0, savedState.bestStreak || 0);
-
-        // Initialize backup reminder tracking
-        const totalRated = savedState.seen.length + savedState.notSeen.length;
-        const reminderInterval = config.gamification.backupReminderInterval || 100;
-        lastBackupReminder = Math.floor(totalRated / reminderInterval) * reminderInterval;
-
-        // Get items from ItemManager
-        const items = ItemManager.getAll();
-
-        // Initialize the sliding window
-        SlidingWindow.init(items, savedState, {
-            onUpdate: handleUpdate,
-            onComplete: handleComplete
-        });
-
-        // Set up event listeners
-        setupEventListeners();
-
-        // Initialize audio on first user interaction
-        document.addEventListener('click', initAudioOnce, { once: true });
-        document.addEventListener('touchstart', initAudioOnce, { once: true });
-
-        // Check for private browsing mode
-        checkPrivateBrowsing();
-
-        // Hide loading, show cards
-        elements.loadingState.classList.add('hidden');
     }
 
     /**
