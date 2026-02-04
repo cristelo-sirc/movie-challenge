@@ -93,6 +93,12 @@
             // Initialize config system first
             config = ConfigLoader.init();
 
+            // Update total count display from config
+            const totalCountEl = document.querySelector('.count-total');
+            if (totalCountEl) {
+                totalCountEl.textContent = config.data.totalCount.toLocaleString();
+            }
+
             // Initialize ItemManager
             ItemManager.init();
 
@@ -243,11 +249,12 @@
         // Update background (desktop)
         updateBackground(data.window[0]);
 
-        // Update theme based on current movie's year
+        // Update theme based on current item's era field (year for movies)
         if (data.window[0]) {
-            const themeResult = ThemeManager.updateForYear(data.window[0].year);
+            const eraValue = ItemManager.getEraValue(data.window[0]);
+            const themeResult = ThemeManager.updateForYear(eraValue);
             if (themeResult.changed && themeResult.from !== null) {
-                // Decade changed! Celebrate
+                // Era changed! Celebrate
                 AudioManager.playDecadeTransition();
                 showDecadeToast(themeResult.theme);
             }
@@ -411,8 +418,8 @@
                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 600%22><rect fill=%22%231a1a1a%22 width=%22400%22 height=%22600%22/><text x=%22200%22 y=%22300%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2224%22>No Poster</text></svg>'"
                     >
                     <div class="card-overlay">
-                        <h2 class="card-title">${escapeHtml(movie.title)}</h2>
-                        <p class="card-year">${movie.year}</p>
+                        <h2 class="card-title">${escapeHtml(ItemManager.getTitle(movie))}</h2>
+                        <p class="card-year">${ItemManager.getSubtitle(movie)}</p>
                     </div>
                     
                     <button class="info-btn" aria-label="More Info">Info</button>
@@ -422,8 +429,8 @@
                 </div>
                 <div class="card-back">
                     <div class="card-back-header">
-                    <span class="card-back-title">${escapeHtml(movie.title)}</span>
-                    <span class="card-back-year">${movie.year}</span>
+                    <span class="card-back-title">${escapeHtml(ItemManager.getTitle(movie))}</span>
+                    <span class="card-back-year">${ItemManager.getSubtitle(movie)}</span>
                 </div>
                 <div class="card-back-rating">
                     <div class="rating-stars">${'★'.repeat(fullStars)}${halfStar ? '½' : ''}${'☆'.repeat(5 - fullStars - (halfStar ? 1 : 0))}</div>
@@ -593,7 +600,9 @@
         if (result.milestone) {
             AudioManager.playMilestoneSound();
             GamificationManager.triggerConfetti();
-            showToast(`🎉 ${result.milestone} movies seen!`, 'success');
+            const itemTypePlural = config.itemTypePlural || 'movies';
+            const pastTense = config.actions.positive.pastTense || 'seen';
+            showToast(`🎉 ${result.milestone} ${itemTypePlural} ${pastTense}!`, 'success');
         }
 
         // Check for rank up
@@ -947,9 +956,13 @@ ${hashtag}`;
         const seenSet = new Set(seenIds);
         const items = (typeof MOVIES !== 'undefined') ? MOVIES : [];
 
+        // Get field names from config or use defaults
+        const idField = (config && config.data && config.data.idField) || 'id';
+        const eraField = (config && config.schema && config.schema.display && config.schema.display.eraField) || 'year';
+
         items.forEach(item => {
-            if (seenSet.has(item.id)) {
-                const era = getEra(item.year);
+            if (seenSet.has(item[idField])) {
+                const era = getEra(item[eraField]);
                 if (era in stats) {
                     stats[era]++;
                 }
@@ -1205,7 +1218,7 @@ ${baseUrl}`;
      * @param {string} direction - 'left' or 'right'
      */
     function animateButtonSwipe(direction) {
-        const topCard = elements.cardStack.lastElementChild;
+        const topCard = elements.cardStack.firstElementChild;
         if (!topCard || SlidingWindow.isComplete()) return;
 
         topCard.classList.add(direction === 'right' ? 'swipe-right' : 'swipe-left');
