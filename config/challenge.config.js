@@ -8,9 +8,9 @@
 
 const ChallengeConfig = {
     // ===== IDENTITY =====
-    name: "5000 Movie Challenge",
+    name: "Movie Challenge",
     shortName: "Movie Challenge",
-    description: "Track your movie watching journey through 5,000 films from 1980 to 2025",
+    description: "Track your movie watching journey through films from 1980 to 2025",
 
     // Item terminology (used throughout the UI)
     itemType: "movie",
@@ -168,7 +168,7 @@ const ChallengeConfig = {
         ],
 
         // Milestone thresholds (triggers celebration)
-        milestones: [10, 50, 100, 250, 500, 1000, 2000, 3000, 4000, 5000],
+        milestones: [10, 50, 100, 250, 500, 1000, 1500, 2000, 2500, 3000, 3500],
 
         // Backup reminder interval (0 to disable)
         backupReminderInterval: 100,
@@ -203,7 +203,7 @@ const ChallengeConfig = {
 
     // ===== SHARING =====
     sharing: {
-        hashtag: "#5000MovieChallenge",
+        hashtag: "#MovieChallenge",
         // Will be auto-detected from window.location if not set
         url: null,
     },

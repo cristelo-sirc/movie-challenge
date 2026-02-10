@@ -140,6 +140,12 @@ const ConfigLoader = (function () {
 
         initialized = true;
 
+        // Auto-set totalCount from actual data if available
+        const items = getItems();
+        if (items && items.length > 0) {
+            config.data.totalCount = items.length;
+        }
+
         return config;
     }
 

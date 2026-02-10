@@ -112,8 +112,8 @@ const GamificationManager = (function () {
             rankUp: null
         };
 
-        // Check for milestone
-        if (enableMilestones && milestones.includes(totalSeen)) {
+        // Check for milestone (only fire once)
+        if (enableMilestones && milestones.includes(totalSeen) && !firedMilestones.has(totalSeen)) {
             result.milestone = totalSeen;
             firedMilestones.add(totalSeen);
         }
