@@ -90251,3 +90251,6 @@ const MOVIES = [
     "budget": 1000000
   }
 ];
+
+// Make available globally for ItemManager
+if (typeof window !== 'undefined') window.MOVIES = MOVIES;

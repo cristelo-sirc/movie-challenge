@@ -1,14 +1,28 @@
 /**
- * Storage Manager for Movie Challenge
+ * Storage Manager
  * Handles all localStorage persistence with batched writes
  */
 
 const StorageManager = (function () {
-    const STORAGE_KEY = 'movie_challenge_progress';
-    const SAVE_DEBOUNCE_MS = 500;
+    // These will be initialized from config
+    let STORAGE_KEY = 'movie_challenge_progress';
+    let SAVE_DEBOUNCE_MS = 500;
 
     let saveTimeout = null;
     let pendingState = null;
+    let totalCount = 5000; // Will be updated from config
+
+    /**
+     * Initialize storage manager with config values
+     */
+    function initStorage() {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            STORAGE_KEY = config.storage.key;
+            SAVE_DEBOUNCE_MS = config.storage.debounceMs;
+            totalCount = config.data.totalCount;
+        }
+    }
 
     /**
      * Default state structure
@@ -127,10 +141,12 @@ const StorageManager = (function () {
      * @returns {Object} Statistics
      */
     function getStats(state) {
+        // Ensure we have latest config values
+        initStorage();
+
         const total = state.seen.length + state.notSeen.length;
         const seenCount = state.seen.length;
-        const totalMovies = (typeof MOVIES !== 'undefined') ? MOVIES.length : total;
-        const percentComplete = total > 0 ? Math.round((total / totalMovies) * 100) : 0;
+        const percentComplete = total > 0 ? Math.round((total / totalCount) * 100) : 0;
         const percentSeen = total > 0 ? Math.round((seenCount / total) * 100) : 0;
 
         return {
@@ -139,7 +155,7 @@ const StorageManager = (function () {
             notSeenCount: state.notSeen.length,
             percentComplete,
             percentSeen,
-            remaining: totalMovies - total
+            remaining: totalCount - total
         };
     }
 
@@ -153,33 +169,43 @@ const StorageManager = (function () {
      */
     function exportCompressed(state) {
         try {
+            // Ensure we have latest config values
+            initStorage();
+
             // Create sets for O(1) lookup
             const seenSet = new Set(state.seen);
             const notSeenSet = new Set(state.notSeen);
 
-            // Build bit array: 2 bits per movie
+            // Build bit array: 2 bits per item
             // 00 = not rated, 01 = seen, 10 = not seen
-            const totalMovies = (typeof MOVIES !== 'undefined') ? MOVIES.length : 5000;
-            const bitsPerMovie = 2;
-            const totalBytes = Math.ceil((totalMovies * bitsPerMovie) / 8);
+            const totalItems = totalCount;
+            const bitsPerItem = 2;
+            const totalBytes = Math.ceil((totalItems * bitsPerItem) / 8);
             const bytes = new Uint8Array(totalBytes);
 
-            // We need movie IDs - get them from the global MOVIES array
-            if (typeof MOVIES !== 'undefined') {
-                MOVIES.forEach((movie, index) => {
-                    if (index >= totalMovies) return;
+            // Get items from ItemManager if available, otherwise fallback to MOVIES
+            const items = (typeof ItemManager !== 'undefined' && ItemManager.isInitialized)
+                ? ItemManager.getAll()
+                : (typeof MOVIES !== 'undefined' ? MOVIES : []);
 
-                    let value = 0; // not rated
-                    if (seenSet.has(movie.id)) value = 1; // seen
-                    else if (notSeenSet.has(movie.id)) value = 2; // not seen
+            const config = (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized)
+                ? ConfigLoader.get()
+                : { data: { idField: 'id' } };
 
-                    const bitPosition = index * bitsPerMovie;
-                    const byteIndex = Math.floor(bitPosition / 8);
-                    const bitOffset = bitPosition % 8;
+            items.forEach((item, index) => {
+                if (index >= totalItems) return;
 
-                    bytes[byteIndex] |= (value << bitOffset);
-                });
-            }
+                const itemId = item[config.data.idField];
+                let value = 0; // not rated
+                if (seenSet.has(itemId)) value = 1; // seen
+                else if (notSeenSet.has(itemId)) value = 2; // not seen
+
+                const bitPosition = index * bitsPerItem;
+                const byteIndex = Math.floor(bitPosition / 8);
+                const bitOffset = bitPosition % 8;
+
+                bytes[byteIndex] |= (value << bitOffset);
+            });
 
             // Convert to base64 string
             let binaryString = '';
@@ -276,6 +302,9 @@ const StorageManager = (function () {
      */
     function decodeBitArray(data) {
         try {
+            // Ensure we have latest config values
+            initStorage();
+
             const binaryString = atob(data.d);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) {
@@ -285,21 +314,28 @@ const StorageManager = (function () {
             const seen = [];
             const notSeen = [];
 
-            if (typeof MOVIES !== 'undefined') {
-                const totalMovies = MOVIES.length;
-                MOVIES.forEach((movie, index) => {
-                    if (index >= totalMovies) return;
+            // Get items from ItemManager if available, otherwise fallback to MOVIES
+            const items = (typeof ItemManager !== 'undefined' && ItemManager.isInitialized)
+                ? ItemManager.getAll()
+                : (typeof MOVIES !== 'undefined' ? MOVIES : []);
 
-                    const bitPosition = index * 2;
-                    const byteIndex = Math.floor(bitPosition / 8);
-                    const bitOffset = bitPosition % 8;
+            const config = (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized)
+                ? ConfigLoader.get()
+                : { data: { idField: 'id' } };
 
-                    const value = (bytes[byteIndex] >> bitOffset) & 0b11;
+            items.forEach((item, index) => {
+                if (index >= totalCount) return;
 
-                    if (value === 1) seen.push(movie.id);
-                    else if (value === 2) notSeen.push(movie.id);
-                });
-            }
+                const bitPosition = index * 2;
+                const byteIndex = Math.floor(bitPosition / 8);
+                const bitOffset = bitPosition % 8;
+
+                const value = (bytes[byteIndex] >> bitOffset) & 0b11;
+
+                const itemId = item[config.data.idField];
+                if (value === 1) seen.push(itemId);
+                else if (value === 2) notSeen.push(itemId);
+            });
 
             return {
                 currentIndex: data.i || 0,
@@ -351,6 +387,7 @@ const StorageManager = (function () {
 
     // Public API
     return {
+        init: initStorage,
         load,
         save,
         saveImmediate,
@@ -360,7 +397,7 @@ const StorageManager = (function () {
         importCompressed,
         generateShareURL,
         checkURLForProgress,
-        STORAGE_KEY
+        get STORAGE_KEY() { return STORAGE_KEY; }
     };
 })();
 

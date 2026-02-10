@@ -1,21 +1,21 @@
 /**
- * Sliding Window Engine for Movie Challenge
- * 
- * Manages a virtualized view of movies to prevent memory issues.
+ * Sliding Window Engine
+ *
+ * Manages a virtualized view of items to prevent memory issues.
  * Only a small "window" of cards is rendered to the DOM at any time.
  */
 
 const SlidingWindow = (function () {
-    // Configuration
-    const WINDOW_SIZE = 5;          // Number of cards to render at once
-    const PRELOAD_AHEAD = 3;        // How many cards ahead to preload images
-    const HISTORY_MAX_SIZE = 100;   // Max undo history
+    // Configuration - will be loaded from config
+    let WINDOW_SIZE = 5;          // Number of cards to render at once
+    let PRELOAD_AHEAD = 3;        // How many cards ahead to preload images
+    let HISTORY_MAX_SIZE = 100;   // Max undo history
 
     // State
-    let movies = [];                 // Full movie list (lightweight metadata only)
+    let items = [];                  // Full item list (movies, books, etc.)
     let currentIndex = 0;            // Current position in the list
-    let seenSet = new Set();         // Fast lookup for seen movies
-    let notSeenSet = new Set();      // Fast lookup for not-seen movies
+    let seenSet = new Set();         // Fast lookup for seen items
+    let notSeenSet = new Set();      // Fast lookup for not-seen items
     let history = [];                // Action history for undo
 
     // Callbacks
@@ -23,13 +23,28 @@ const SlidingWindow = (function () {
     let onComplete = null;
 
     /**
-     * Initialize the sliding window with movie data and saved state
-     * @param {Array} movieList - Full list of movies
+     * Load configuration values
+     */
+    function loadConfig() {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            WINDOW_SIZE = config.ui.windowSize;
+            PRELOAD_AHEAD = config.ui.preloadAhead;
+            HISTORY_MAX_SIZE = config.storage.maxHistorySize;
+        }
+    }
+
+    /**
+     * Initialize the sliding window with item data and saved state
+     * @param {Array} itemList - Full list of items (movies, books, etc.)
      * @param {Object} savedState - State from StorageManager
      * @param {Object} callbacks - { onUpdate, onComplete }
      */
-    function init(movieList, savedState, callbacks) {
-        movies = movieList;
+    function init(itemList, savedState, callbacks) {
+        // Load config values
+        loadConfig();
+
+        items = itemList;
         currentIndex = savedState.currentIndex || 0;
         seenSet = new Set(savedState.seen || []);
         notSeenSet = new Set(savedState.notSeen || []);
@@ -38,8 +53,8 @@ const SlidingWindow = (function () {
         onUpdate = callbacks.onUpdate || (() => { });
         onComplete = callbacks.onComplete || (() => { });
 
-        // Skip already-rated movies to find the real current position
-        while (currentIndex < movies.length && isRated(movies[currentIndex].id)) {
+        // Skip already-rated items to find the real current position
+        while (currentIndex < items.length && isRated(getItemId(items[currentIndex]))) {
             currentIndex++;
         }
 
@@ -47,8 +62,19 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Check if a movie has been rated
-     * @param {number} id - Movie ID
+     * Get the ID of an item using config
+     */
+    function getItemId(item) {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            return item[config.data.idField];
+        }
+        return item.id;
+    }
+
+    /**
+     * Check if an item has been rated
+     * @param {number|string} id - Item ID
      * @returns {boolean}
      */
     function isRated(id) {
@@ -56,41 +82,41 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Get the current window of movies to display
-     * @returns {Array} Movies in the current window
+     * Get the current window of items to display
+     * @returns {Array} Items in the current window
      */
     function getWindow() {
-        const windowMovies = [];
+        const windowItems = [];
         let idx = currentIndex;
 
-        // Collect unrated movies for the window
-        while (windowMovies.length < WINDOW_SIZE && idx < movies.length) {
-            const movie = movies[idx];
-            if (!isRated(movie.id)) {
-                windowMovies.push({
-                    ...movie,
+        // Collect unrated items for the window
+        while (windowItems.length < WINDOW_SIZE && idx < items.length) {
+            const item = items[idx];
+            if (!isRated(getItemId(item))) {
+                windowItems.push({
+                    ...item,
                     index: idx
                 });
             }
             idx++;
         }
 
-        return windowMovies;
+        return windowItems;
     }
 
     /**
-     * Get movies to preload (for image prefetching)
-     * @returns {Array} Movie objects to preload
+     * Get items to preload (for image prefetching)
+     * @returns {Array} Item objects to preload
      */
     function getPreloadQueue() {
         const queue = [];
         let idx = currentIndex;
         let count = 0;
 
-        while (count < WINDOW_SIZE + PRELOAD_AHEAD && idx < movies.length) {
-            const movie = movies[idx];
-            if (!isRated(movie.id)) {
-                queue.push(movie);
+        while (count < WINDOW_SIZE + PRELOAD_AHEAD && idx < items.length) {
+            const item = items[idx];
+            if (!isRated(getItemId(item))) {
+                queue.push(item);
                 count++;
             }
             idx++;
@@ -100,14 +126,15 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Mark the current movie as seen
+     * Mark the current item as seen
      */
     function markSeen() {
-        const currentMovie = getCurrentMovie();
-        if (!currentMovie) return false;
+        const currentItem = getCurrentItem();
+        if (!currentItem) return false;
 
-        seenSet.add(currentMovie.id);
-        history.push({ id: currentMovie.id, action: 'seen' });
+        const itemId = getItemId(currentItem);
+        seenSet.add(itemId);
+        history.push({ id: itemId, action: 'seen' });
         trimHistory();
         advanceToNext();
 
@@ -115,14 +142,15 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Mark the current movie as not seen (skip)
+     * Mark the current item as not seen (skip)
      */
     function markNotSeen() {
-        const currentMovie = getCurrentMovie();
-        if (!currentMovie) return false;
+        const currentItem = getCurrentItem();
+        if (!currentItem) return false;
 
-        notSeenSet.add(currentMovie.id);
-        history.push({ id: currentMovie.id, action: 'notSeen' });
+        const itemId = getItemId(currentItem);
+        notSeenSet.add(itemId);
+        history.push({ id: itemId, action: 'notSeen' });
         trimHistory();
         advanceToNext();
 
@@ -144,10 +172,10 @@ const SlidingWindow = (function () {
             notSeenSet.delete(lastAction.id);
         }
 
-        // Find the index of the movie we just un-rated
-        const movieIdx = movies.findIndex(m => m.id === lastAction.id);
-        if (movieIdx !== -1 && movieIdx < currentIndex) {
-            currentIndex = movieIdx;
+        // Find the index of the item we just un-rated
+        const itemIdx = items.findIndex(m => getItemId(m) === lastAction.id);
+        if (itemIdx !== -1 && itemIdx < currentIndex) {
+            currentIndex = itemIdx;
         }
 
         triggerUpdate();
@@ -155,36 +183,41 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Get the current (top) movie
+     * Get the current (top) item
      * @returns {Object|null}
      */
-    function getCurrentMovie() {
+    function getCurrentItem() {
         let idx = currentIndex;
-        while (idx < movies.length) {
-            const movie = movies[idx];
-            if (!isRated(movie.id)) {
-                return { ...movie, index: idx };
+        while (idx < items.length) {
+            const item = items[idx];
+            if (!isRated(getItemId(item))) {
+                return { ...item, index: idx };
             }
             idx++;
         }
         return null;
     }
 
+    // Alias for backwards compatibility
+    function getCurrentMovie() {
+        return getCurrentItem();
+    }
+
     /**
-     * Advance to the next unrated movie
+     * Advance to the next unrated item
      */
     function advanceToNext() {
         currentIndex++;
 
-        // Skip any already-rated movies
-        while (currentIndex < movies.length && isRated(movies[currentIndex].id)) {
+        // Skip any already-rated items
+        while (currentIndex < items.length && isRated(getItemId(items[currentIndex]))) {
             currentIndex++;
         }
 
         triggerUpdate();
 
         // Check for completion
-        if (currentIndex >= movies.length || !getCurrentMovie()) {
+        if (currentIndex >= items.length || !getCurrentItem()) {
             onComplete(getState());
         }
     }
@@ -212,19 +245,36 @@ const SlidingWindow = (function () {
     }
 
     /**
-     * Get the current decade based on current movie
+     * Get the current era based on current item
      * @returns {string}
      */
-    function getCurrentDecade() {
-        const movie = getCurrentMovie();
-        if (!movie) return '2020s';
+    function getCurrentEra() {
+        const item = getCurrentItem();
+        if (!item) {
+            // Return default era from config or fallback
+            if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+                return ConfigLoader.get().eras.default || '2020s';
+            }
+            return '2020s';
+        }
 
-        const year = movie.year;
+        // Use ItemManager if available
+        if (typeof ItemManager !== 'undefined' && ItemManager.isInitialized) {
+            return ItemManager.getEraId(item);
+        }
+
+        // Fallback to hardcoded logic for backwards compatibility
+        const year = item.year;
         if (year < 1990) return '1980s';
         if (year < 2000) return '1990s';
         if (year < 2010) return '2000s';
         if (year < 2020) return '2010s';
         return '2020s';
+    }
+
+    // Alias for backwards compatibility
+    function getCurrentDecade() {
+        return getCurrentEra();
     }
 
     /**
@@ -235,11 +285,11 @@ const SlidingWindow = (function () {
         const total = seenSet.size + notSeenSet.size;
         return {
             current: total,
-            total: movies.length,
-            percent: movies.length > 0 ? (total / movies.length) * 100 : 0,
+            total: items.length,
+            percent: items.length > 0 ? (total / items.length) * 100 : 0,
             seen: seenSet.size,
             notSeen: notSeenSet.size,
-            remaining: movies.length - total
+            remaining: items.length - total
         };
     }
 
@@ -252,7 +302,8 @@ const SlidingWindow = (function () {
                 window: getWindow(),
                 preload: getPreloadQueue(),
                 progress: getProgress(),
-                decade: getCurrentDecade(),
+                decade: getCurrentEra(), // Keep 'decade' key for backwards compatibility
+                era: getCurrentEra(),
                 state: getState(),
                 canUndo: history.length > 0
             });
@@ -275,7 +326,7 @@ const SlidingWindow = (function () {
      * @returns {boolean}
      */
     function isComplete() {
-        return !getCurrentMovie();
+        return !getCurrentItem();
     }
 
     // Public API
@@ -286,10 +337,12 @@ const SlidingWindow = (function () {
         markSeen,
         markNotSeen,
         undo,
-        getCurrentMovie,
+        getCurrentItem,
+        getCurrentMovie, // Alias for backwards compatibility
         getState,
         getProgress,
-        getCurrentDecade,
+        getCurrentEra,
+        getCurrentDecade, // Alias for backwards compatibility
         reset,
         isComplete,
         get historyLength() { return history.length; }

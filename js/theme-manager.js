@@ -1,16 +1,17 @@
 /**
- * Theme Manager - Dynamic Decade-Based Theming
- * Changes the visual style based on the current movie's decade
+ * Theme Manager - Dynamic Era-Based Theming
+ * Changes the visual style based on the current item's era
  */
 
 const ThemeManager = (function () {
     'use strict';
 
     let currentTheme = null;
-    let currentDecade = null;
+    let currentEra = null;
+    let themes = {};
 
-    // Theme definitions for each decade
-    const themes = {
+    // Default theme definitions (used if config doesn't provide themes)
+    const defaultThemes = {
         '1980s': {
             name: '1980s',
             displayName: "80's Synthwave",
@@ -84,25 +85,49 @@ const ThemeManager = (function () {
     };
 
     /**
-     * Get theme for a given year
+     * Load themes from config
      */
-    function getThemeForYear(year) {
-        if (year >= 2020) return themes['2020s'];
-        if (year >= 2010) return themes['2010s'];
-        if (year >= 2000) return themes['2000s'];
-        if (year >= 1990) return themes['1990s'];
-        return themes['1980s'];
+    function loadThemesFromConfig() {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            if (config.themes && Object.keys(config.themes).length > 0) {
+                themes = config.themes;
+                return;
+            }
+        }
+        // Fallback to default themes
+        themes = defaultThemes;
     }
 
     /**
-     * Get decade string for a year
+     * Get era ID for a given year using config
      */
-    function getDecadeForYear(year) {
+    function getEraForYear(year) {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const era = ConfigLoader.getEraForValue(year);
+            if (era) return era.id;
+        }
+        // Fallback to hardcoded logic
         if (year >= 2020) return '2020s';
         if (year >= 2010) return '2010s';
         if (year >= 2000) return '2000s';
         if (year >= 1990) return '1990s';
         return '1980s';
+    }
+
+    /**
+     * Get theme for a given year
+     */
+    function getThemeForYear(year) {
+        const eraId = getEraForYear(year);
+        return themes[eraId] || themes['2020s'] || Object.values(themes)[0];
+    }
+
+    /**
+     * Get decade string for a year (alias for backwards compatibility)
+     */
+    function getDecadeForYear(year) {
+        return getEraForYear(year);
     }
 
     /**
@@ -129,20 +154,22 @@ const ThemeManager = (function () {
     }
 
     /**
-     * Update theme based on current movie year
-     * Returns true if decade changed
+     * Update theme based on current item's year
+     * Returns true if era changed
      */
     function updateForYear(year) {
-        const newDecade = getDecadeForYear(year);
+        const newEra = getEraForYear(year);
 
-        if (newDecade !== currentDecade) {
-            const oldDecade = currentDecade;
-            currentDecade = newDecade;
+        if (newEra !== currentEra) {
+            const oldEra = currentEra;
+            currentEra = newEra;
 
-            const theme = themes[newDecade];
-            applyTheme(theme);
+            const theme = themes[newEra];
+            if (theme) {
+                applyTheme(theme);
+            }
 
-            return { changed: true, from: oldDecade, to: newDecade, theme };
+            return { changed: true, from: oldEra, to: newEra, theme };
         }
 
         return { changed: false };
@@ -152,9 +179,24 @@ const ThemeManager = (function () {
      * Initialize with default theme
      */
     function init() {
-        // Start with 1980s theme
-        applyTheme(themes['1980s']);
-        currentDecade = '1980s';
+        // Load themes from config
+        loadThemesFromConfig();
+
+        // Determine default era from config or fallback to first era
+        let defaultEra = '1980s';
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            if (config.eras.groups && config.eras.groups.length > 0) {
+                defaultEra = config.eras.groups[0].id;
+            }
+        }
+
+        // Start with default theme
+        const defaultTheme = themes[defaultEra] || Object.values(themes)[0];
+        if (defaultTheme) {
+            applyTheme(defaultTheme);
+        }
+        currentEra = defaultEra;
     }
 
     /**
@@ -165,10 +207,17 @@ const ThemeManager = (function () {
     }
 
     /**
-     * Get current decade
+     * Get current era
+     */
+    function getCurrentEra() {
+        return currentEra;
+    }
+
+    /**
+     * Get current decade (alias for backwards compatibility)
      */
     function getCurrentDecade() {
-        return currentDecade;
+        return currentEra;
     }
 
     // Public API
@@ -176,9 +225,11 @@ const ThemeManager = (function () {
         init,
         updateForYear,
         getThemeForYear,
-        getDecadeForYear,
+        getEraForYear,
+        getDecadeForYear, // Alias for backwards compatibility
         getCurrentTheme,
-        getCurrentDecade,
-        themes
+        getCurrentEra,
+        getCurrentDecade, // Alias for backwards compatibility
+        get themes() { return themes; }
     };
 })();

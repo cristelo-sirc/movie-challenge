@@ -11,8 +11,14 @@ const GamificationManager = (function () {
     let totalSeen = 0;
     let firedMilestones = new Set();
 
-    // Rank definitions
-    const ranks = [
+    // Feature flags (loaded from config)
+    let enableStreaks = true;
+    let enableRanks = true;
+    let enableMilestones = true;
+    let enableConfetti = true;
+
+    // Rank definitions (loaded from config or defaults)
+    let ranks = [
         { threshold: 0, name: 'Extra', emoji: '🎬' },
         { threshold: 100, name: 'Supporting Actor', emoji: '🎭' },
         { threshold: 500, name: 'Lead Actor', emoji: '⭐' },
@@ -21,13 +27,63 @@ const GamificationManager = (function () {
         { threshold: 4000, name: 'Legend', emoji: '👑' }
     ];
 
-    // Milestone thresholds
-    const milestones = [10, 50, 100, 250, 500, 1000, 1500, 2000, 2500, 3000, 3500];
+    // Milestone thresholds (loaded from config or defaults)
+    let milestones = [10, 50, 100, 250, 500, 1000, 2000, 3000, 4000, 5000];
+
+    // Emoji mapping for config-based ranks
+    const emojiMap = {
+        'film': '🎬',
+        'theater': '🎭',
+        'star': '⭐',
+        'camera': '🎥',
+        'trophy': '🏆',
+        'crown': '👑',
+        'book': '📚',
+        'pen': '🖊️',
+        'graduation': '🎓',
+        'music': '🎵',
+        'headphones': '🎧',
+        'game': '🎮',
+        'controller': '🕹️',
+    };
+
+    /**
+     * Load configuration values
+     */
+    function loadConfig() {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const config = ConfigLoader.get();
+            const gamification = config.gamification;
+
+            // Load feature flags
+            enableStreaks = gamification.enableStreaks !== false;
+            enableRanks = gamification.enableRanks !== false;
+            enableMilestones = gamification.enableMilestones !== false;
+            enableConfetti = gamification.enableConfetti !== false;
+
+            // Load ranks from config, converting emoji strings to actual emojis
+            if (gamification.ranks && gamification.ranks.length > 0) {
+                ranks = gamification.ranks.map(rank => ({
+                    threshold: rank.threshold,
+                    name: rank.name,
+                    emoji: emojiMap[rank.emoji] || rank.emoji || '⭐'
+                }));
+            }
+
+            // Load milestones from config
+            if (gamification.milestones && gamification.milestones.length > 0) {
+                milestones = gamification.milestones;
+            }
+        }
+    }
 
     /**
      * Initialize with saved state
      */
     function init(seenCount, savedBestStreak = 0) {
+        // Load config values first
+        loadConfig();
+
         totalSeen = seenCount;
         bestStreak = savedBestStreak;
         currentStreak = 0;
@@ -39,31 +95,36 @@ const GamificationManager = (function () {
      * Record a "Seen" action - builds streak
      */
     function recordSeen() {
-        currentStreak++;
-        totalSeen++;
+        if (enableStreaks) {
+            currentStreak++;
 
-        if (currentStreak > bestStreak) {
-            bestStreak = currentStreak;
+            if (currentStreak > bestStreak) {
+                bestStreak = currentStreak;
+            }
         }
 
+        totalSeen++;
+
         const result = {
-            streak: currentStreak,
-            isNewBest: currentStreak === bestStreak && currentStreak > 1,
+            streak: enableStreaks ? currentStreak : 0,
+            isNewBest: enableStreaks && currentStreak === bestStreak && currentStreak > 1,
             milestone: null,
             rankUp: null
         };
 
-        // Check for milestone (only fire once)
-        if (milestones.includes(totalSeen) && !firedMilestones.has(totalSeen)) {
+        // Check for milestone
+        if (enableMilestones && milestones.includes(totalSeen)) {
             result.milestone = totalSeen;
             firedMilestones.add(totalSeen);
         }
 
         // Check for rank up
-        const newRank = getRank(totalSeen);
-        const previousRank = getRank(totalSeen - 1);
-        if (newRank.name !== previousRank.name) {
-            result.rankUp = newRank;
+        if (enableRanks) {
+            const newRank = getRank(totalSeen);
+            const previousRank = getRank(totalSeen - 1);
+            if (newRank.name !== previousRank.name) {
+                result.rankUp = newRank;
+            }
         }
 
         return result;
@@ -74,7 +135,9 @@ const GamificationManager = (function () {
      */
     function recordSkip() {
         const wasStreak = currentStreak;
-        currentStreak = 0;
+        if (enableStreaks) {
+            currentStreak = 0;
+        }
         return { brokenStreak: wasStreak };
     }
 
@@ -147,6 +210,8 @@ const GamificationManager = (function () {
      * Simple confetti effect (CSS-based, no library)
      */
     function triggerConfetti(container) {
+        if (!enableConfetti) return;
+
         const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#f00', '#00f'];
         const confettiCount = 50;
 

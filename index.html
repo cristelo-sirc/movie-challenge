@@ -240,15 +240,29 @@
         <div class="toast hidden" id="toast"></div>
     </div>
 
+    <!-- Libraries -->
     <script src="js/lib/lz-string.min.js"></script>
     <script src="js/lib/qrcode.min.js"></script>
-    <script src="js/sliding-window.js?v=13"></script>
-    <script src="data/movies.js?v=18"></script>
-    <script src="js/storage.js?v=13"></script>
+
+    <!-- Configuration (load first) -->
+    <script src="config/challenge.config.js?v=19"></script>
+    <script src="js/core/config-loader.js?v=19"></script>
+
+    <!-- Data -->
+    <script src="data/movies.js?v=20"></script>
+
+    <!-- Core modules -->
+    <script src="js/core/item-manager.js?v=19"></script>
+    <script src="js/sliding-window.js?v=19"></script>
+    <script src="js/storage.js?v=19"></script>
+
+    <!-- Feature modules -->
     <script src="js/audio-manager.js?v=13"></script>
-    <script src="js/theme-manager.js?v=13"></script>
-    <script src="js/gamification.js?v=13"></script>
-    <script src="js/app.js?v=18"></script>
+    <script src="js/theme-manager.js?v=19"></script>
+    <script src="js/gamification.js?v=19"></script>
+
+    <!-- Main application -->
+    <script src="js/app.js?v=21"></script>
 </body>
 
 </html>
