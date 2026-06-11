@@ -12,7 +12,8 @@ const SlidingWindow = (function () {
     let HISTORY_MAX_SIZE = 100;   // Max undo history
 
     // State
-    let items = [];                  // Full item list (movies, books, etc.)
+    let items = [];                  // Full item list (movies, books, etc.) — may grow as chunks load
+    let totalExpected = 0;           // True total per manifest (items.length may be smaller while loading)
     let currentIndex = 0;            // Current position in the list
     let seenSet = new Set();         // Fast lookup for seen items
     let notSeenSet = new Set();      // Fast lookup for not-seen items
@@ -40,11 +41,14 @@ const SlidingWindow = (function () {
      * @param {Object} savedState - State from StorageManager
      * @param {Object} callbacks - { onUpdate, onComplete }
      */
-    function init(itemList, savedState, callbacks) {
+    function init(itemList, savedState, callbacks, options) {
         // Load config values
         loadConfig();
 
         items = itemList;
+        // With chunked loading, items may still be arriving. totalExpected is
+        // the manifest's true count; completion must never fire before then.
+        totalExpected = (options && options.totalExpected) || itemList.length;
         currentIndex = savedState.currentIndex || 0;
         seenSet = new Set(savedState.seen || []);
         notSeenSet = new Set(savedState.notSeen || []);
@@ -216,8 +220,27 @@ const SlidingWindow = (function () {
 
         triggerUpdate();
 
-        // Check for completion
-        if (currentIndex >= items.length || !getCurrentItem()) {
+        // Check for completion — guard: never complete while chunks are still loading
+        if (!getCurrentItem() && allItemsLoaded()) {
+            onComplete(getState());
+        }
+    }
+
+    /**
+     * Whether every expected item is in memory
+     */
+    function allItemsLoaded() {
+        return items.length >= totalExpected;
+    }
+
+    /**
+     * Called when new chunks have been appended to the items array.
+     * Refreshes the window (the user may have been waiting at the loaded edge)
+     * and re-checks completion.
+     */
+    function notifyItemsAppended() {
+        triggerUpdate();
+        if (!getCurrentItem() && allItemsLoaded()) {
             onComplete(getState());
         }
     }
@@ -283,13 +306,15 @@ const SlidingWindow = (function () {
      */
     function getProgress() {
         const total = seenSet.size + notSeenSet.size;
+        // Use the manifest total, not items.length — items may still be loading
+        const grandTotal = totalExpected || items.length;
         return {
             current: total,
-            total: items.length,
-            percent: items.length > 0 ? (total / items.length) * 100 : 0,
+            total: grandTotal,
+            percent: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
             seen: seenSet.size,
             notSeen: notSeenSet.size,
-            remaining: items.length - total
+            remaining: grandTotal - total
         };
     }
 
@@ -326,12 +351,14 @@ const SlidingWindow = (function () {
      * @returns {boolean}
      */
     function isComplete() {
-        return !getCurrentItem();
+        return !getCurrentItem() && allItemsLoaded();
     }
 
     // Public API
     return {
         init,
+        notifyItemsAppended,
+        allItemsLoaded,
         getWindow,
         getPreloadQueue,
         markSeen,

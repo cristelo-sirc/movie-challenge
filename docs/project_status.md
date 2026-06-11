@@ -82,6 +82,14 @@
 <details>
 <summary><strong>📝 Changelog</strong></summary>
 
+### Jun 11, 2026 — v2.1.0 "Decade Split"
+- **Performance:** Movie data split into 5 per-decade JSON chunks + manifest (`data/chunks/`), loaded asynchronously by new `js/core/data-loader.js`. First-load transfer drops ~5x (1.4MB → 280KB gzipped); page no longer blocks on a 4.5MB script.
+- **Data diet:** Stripped 8 unused fields from runtime data (4.53MB → 2.66MB total); added `tier: "iconic"` flag (top 5% by votes) for the upcoming v3.1 anticipation features.
+- **Bug fix:** Removed 2 duplicate movies (Ice Age 3, Transformers: Rise of the Beasts) that appeared twice in a row and made 100% completion mathematically impossible. Total is now 4,719.
+- **Safety guards:** completion can't fire while chunks are loading; QR backup/export/import/share wait for full data with a friendly toast; "Loading more movies..." state if a fast swiper reaches the loaded edge.
+- **Known change:** local dev now requires a simple web server (`python3 -m http.server`) — file:// no longer works. Progress codes exported before v2.1 may import with minor misalignment for 2010s/2020s titles (2 removed duplicates shifted positions); current-user localStorage progress is unaffected (ID-based).
+- Build pipeline: `scripts/build_chunks.js` (regenerates chunks + verifies ID-sequence integrity); `scripts/test_phase1.js` (34-check integration harness).
+
 ### Jun 11, 2026
 - **Security:** Removed TMDB API key from docs. Key now lives in a gitignored `.tmdb_key` file; all local scripts read it from there (or the `TMDB_API_KEY` environment variable). Decision: key not rotated (accepted risk — read-only, no billing). Note: key remains visible in old git history.
 

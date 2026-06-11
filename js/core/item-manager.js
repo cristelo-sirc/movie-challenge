@@ -35,6 +35,20 @@ const ItemManager = (function () {
     }
 
     /**
+     * Register newly appended items (chunked loading).
+     * The items array reference is shared with the loader, so only the
+     * ID lookup map needs updating here.
+     * @param {Array} newItems
+     */
+    function addItems(newItems) {
+        if (!initialized) { init(); return; }
+        const idField = ConfigLoader.get().data.idField;
+        newItems.forEach(item => {
+            itemsById.set(item[idField], item);
+        });
+    }
+
+    /**
      * Get all items
      * @returns {Array}
      */
@@ -245,6 +259,7 @@ const ItemManager = (function () {
     // Public API
     return {
         init,
+        addItems,
         getAll,
         getById,
         getCount,

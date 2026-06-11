@@ -86,35 +86,50 @@
     let lastBackupReminder = 0;
 
     /**
-     * Initialize the application
+     * Initialize the application (async since v2.1: data loads in chunks)
      */
-    function init() {
+    async function init() {
         try {
-            // Initialize config system first
+            // Initialize config system first (no item data needed)
             config = ConfigLoader.init();
 
-            // Update total count display from config
+            // Initialize StorageManager with config
+            StorageManager.init();
+
+            // Shared-link progress (?p=) needs EVERY chunk before it can be
+            // decoded (the QR format maps bits to item positions), so for
+            // those visitors we wait for the full dataset.
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasURLProgress = urlParams.has('p');
+
+            // Load saved state — its position tells us which chunks we need first
+            let savedState = StorageManager.load();
+
+            // Load item data: the chunks covering the user's position now,
+            // the rest quietly in the background.
+            await DataLoader.start({
+                savedIndex: savedState.currentIndex || 0,
+                loadAll: hasURLProgress,
+                onChunkLoaded: handleChunkLoaded,
+            });
+
+            // Items (at least the needed prefix) now exist
+            ItemManager.init();
+
+            // Update total count display (corrected from the manifest)
             const totalCountEl = document.querySelector('.count-total');
             if (totalCountEl) {
                 totalCountEl.textContent = config.data.totalCount.toLocaleString();
             }
 
-            // Initialize ItemManager
-            ItemManager.init();
-
-            // Initialize StorageManager with config
-            StorageManager.init();
-
-            // Check for URL-based progress first (for shared links)
-            let savedState = StorageManager.checkURLForProgress();
-
-            if (savedState) {
-                // Progress restored from URL - save it locally
-                StorageManager.save(savedState);
-                showToast('Progress restored from link!', 'success');
-            } else {
-                // Load saved state from localStorage
-                savedState = StorageManager.load();
+            // Now safe to decode URL-based progress (all chunks loaded above)
+            if (hasURLProgress) {
+                const imported = StorageManager.checkURLForProgress();
+                if (imported) {
+                    savedState = imported;
+                    StorageManager.save(savedState);
+                    showToast('Progress restored from link!', 'success');
+                }
             }
 
             // Initialize v2.0 Managers
@@ -129,11 +144,12 @@
             // Get items from ItemManager
             const items = ItemManager.getAll();
 
-            // Initialize the sliding window
+            // Initialize the sliding window (totalExpected guards completion
+            // and progress math while chunks are still arriving)
             SlidingWindow.init(items, savedState, {
                 onUpdate: handleUpdate,
                 onComplete: handleComplete
-            });
+            }, { totalExpected: DataLoader.totalExpected });
 
             // Set up event listeners
             setupEventListeners();
@@ -152,9 +168,33 @@
             // Show error on page
             const loadingEl = document.getElementById('loadingState');
             if (loadingEl) {
-                loadingEl.innerHTML = '<p style="color:red;padding:20px;text-align:center;">Error: ' + error.message + '<br><br>Please refresh the page.</p>';
+                const fileHint = (window.location.protocol === 'file:')
+                    ? '<br><br>Note: since v2.1 the app loads data over HTTP, so opening index.html directly from disk no longer works. Run a local server instead (e.g. <code>python3 -m http.server</code>).'
+                    : '';
+                loadingEl.innerHTML = '<p style="color:red;padding:20px;text-align:center;">Error: ' + error.message + '<br><br>Please refresh the page.' + fileHint + '</p>';
             }
         }
+    }
+
+    /**
+     * A background chunk arrived: register it and refresh the card window
+     * (the user may have been waiting at the edge of loaded data)
+     */
+    function handleChunkLoaded(chunkItems) {
+        ItemManager.addItems(chunkItems);
+        SlidingWindow.notifyItemsAppended();
+    }
+
+    /**
+     * Some actions (QR backup, export, import, share) depend on the FULL
+     * item list being in memory. Returns true and shows a toast if not ready.
+     */
+    function requiresFullData() {
+        if (!DataLoader.isFullyLoaded) {
+            showToast('Still loading movie data — try again in a few seconds', 'error');
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -239,6 +279,16 @@
 
         // Render cards
         renderCards(data.window);
+
+        // If the user caught up to the loaded edge while chunks are still
+        // downloading, show a brief loading state instead of an empty stack
+        if (data.window.length === 0 && !SlidingWindow.isComplete()) {
+            const loadingText = elements.loadingState.querySelector('p');
+            if (loadingText) loadingText.textContent = 'Loading more movies...';
+            elements.loadingState.classList.remove('hidden');
+        } else {
+            elements.loadingState.classList.add('hidden');
+        }
 
         // Preload images
         preloadImages(data.preload);
@@ -792,6 +842,7 @@
     // ===== EXPORT/IMPORT FUNCTIONS =====
 
     function handleExport() {
+        if (requiresFullData()) return;
         const state = SlidingWindow.getState();
 
         // Use new compressed format (v2)
@@ -826,6 +877,7 @@
     }
 
     function handleApplyCode() {
+        if (requiresFullData()) return;
         const code = elements.codeInput.value.trim();
         if (!code) {
             showToast('Please paste a progress code', 'error');
@@ -846,7 +898,7 @@
         SlidingWindow.init(ItemManager.getAll(), newState, {
             onUpdate: handleUpdate,
             onComplete: handleComplete
-        });
+        }, { totalExpected: DataLoader.totalExpected });
 
         // Re-sync gamification manager with imported seen count
         GamificationManager.init(newState.seen.length, 0);
@@ -870,6 +922,7 @@
     // ===== SHARE FUNCTION =====
 
     function shareResults() {
+        if (requiresFullData()) return;
         const progress = SlidingWindow.getProgress();
         const percentSeen = progress.current > 0
             ? Math.round((progress.seen / progress.current) * 100)
@@ -1014,6 +1067,7 @@ ${hashtag}`;
      * Open the backup modal and generate QR code
      */
     function openBackupModal() {
+        if (requiresFullData()) return;
         const state = SlidingWindow.getState();
         const totalRated = state.seen.length + state.notSeen.length;
 

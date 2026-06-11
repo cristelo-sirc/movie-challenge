@@ -3,12 +3,12 @@
 [![Live Demo](https://img.shields.io/badge/demo-live-green.svg?style=for-the-badge&logo=github)](https://cristelo-sirc.github.io/movie-challenge/)
 
 **Can you watch them all?**
-A Tinder-style movie discovery app that challenges you to track your film history across **5,014 movies** spanning from 1980 to 2025.
+A Tinder-style movie discovery app that challenges you to track your film history across **4,719 movies** spanning from 1980 to 2025.
 
 ## ✨ Features
 
 ### 🎞 Massive Dataset
-*   **3,800+ Movies:** Curated selection of English-language hits, cult classics, and award-winning international films.
+*   **4,719 Movies:** Curated selection of English-language hits, cult classics, and award-winning international films.
 *   **Rich Metadata:** Tap any card to flip it and see **Rating**, **Runtime**, and **Synopsis**.
 *   **Decade Filtering:** Jump straight to the 80s, 90s, 2000s, 2010s, or 2020s.
 
@@ -40,6 +40,7 @@ Built for speed and simplicity using modern web standards.
 *   **Storage:** `localStorage` for persistence, `LZString` for compressed QR codes.
 *   **Performance:**
     *   Zero frameworks (No React/Vue/Angular bloat).
+    *   Decade-chunked data loading: the first card appears after ~280KB instead of ~1.4MB; remaining decades stream in the background.
     *   Virtual "Sliding Window" DOM rendering (renders only 5 cards at a time for 60fps performance).
     *   Smart image preloading.
 
@@ -49,11 +50,11 @@ This project is automatically deployed/hosted via **GitHub Pages**.
 *   **Workflow:** Pushing to the `main` branch triggers a GitHub Action (`.github/workflows/deploy.yml`) that builds and deploys the static content.
 
 ## 💻 Run Locally
-No build step required! This is a static web application.
+This is a static web application — no build step. Since v2.1 the movie data loads over HTTP (decade chunks), so you need a local web server:
 
 1.  Clone the repository.
-2.  Open `index.html` in your browser.
-    *   *Note: For the best experience with file paths, running a simple local server (e.g., `python3 -m http.server`) is recommended but not strictly required.*
+2.  Run a simple server from the project folder, e.g. `python3 -m http.server`
+3.  Open `http://localhost:8000` in your browser. (Opening `index.html` directly from disk no longer works.)
 
 ## 👏 Credits
 *   Movie Data provided by [The Movie Database (TMDB)](https://www.themoviedb.org/).

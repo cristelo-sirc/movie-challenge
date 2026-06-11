@@ -20,10 +20,13 @@ const ChallengeConfig = {
     data: {
         // The global variable name where items are stored
         variableName: "MOVIES",
-        // Total expected count (used for progress display)
-        totalCount: 5000,
+        // Total expected count (display fallback; the chunk manifest is the
+        // source of truth and overrides this at load time)
+        totalCount: 4719,
         // Field used as the unique identifier
         idField: "id",
+        // Chunked data manifest (loaded by js/core/data-loader.js)
+        manifestUrl: "data/chunks/manifest.json",
     },
 
     // ===== SCHEMA =====

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "generated": "2026-06-11T15:38:40.614Z",
+  "totalCount": 4719,
+  "chunks": [
+    {
+      "id": "1980s",
+      "file": "movies-1980s.json",
+      "count": 1172,
+      "startIndex": 0
+    },
+    {
+      "id": "1990s",
+      "file": "movies-1990s.json",
+      "count": 1690,
+      "startIndex": 1172
+    },
+    {
+      "id": "2000s",
+      "file": "movies-2000s.json",
+      "count": 1316,
+      "startIndex": 2862
+    },
+    {
+      "id": "2010s",
+      "file": "movies-2010s.json",
+      "count": 398,
+      "startIndex": 4178
+    },
+    {
+      "id": "2020s",
+      "file": "movies-2020s.json",
+      "count": 143,
+      "startIndex": 4576
+    }
+  ]
+}
