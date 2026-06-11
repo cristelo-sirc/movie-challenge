@@ -229,7 +229,7 @@
         const banner = document.createElement('div');
         banner.className = 'private-browsing-banner';
         banner.innerHTML = `
-            <span>💡 Tip: Use "Export Code" in the ☰ menu to backup your progress. Private browsing won't save data.</span>
+            <span>Tip: Use "Export Code" in the menu to backup your progress. Private browsing won't save data.</span>
             <button class="banner-close" aria-label="Dismiss">✕</button>
         `;
 
@@ -347,7 +347,7 @@
         const banner = document.createElement('div');
         banner.className = 'backup-reminder-banner';
         banner.innerHTML = `
-            <span>🎉 ${milestone} ${itemTypePlural} rated! Backup your progress?</span>
+            <span>${milestone} ${itemTypePlural} rated! Backup your progress?</span>
             <div style="display: flex; gap: 8px;">
                 <button class="backup-now-btn">Backup Now</button>
                 <button class="banner-close" aria-label="Dismiss">✕</button>
@@ -493,8 +493,8 @@
                 
                 ${movie.runtime || director ? `
                 <div class="card-back-meta">
-                    ${movie.runtime ? `<span>⏱ ${movie.runtime}m</span>` : ''}
-                    ${director ? `<span>🎬 ${director}</span>` : ''}
+                    ${movie.runtime ? `<span>${movie.runtime} min</span>` : ''}
+                    ${director ? `<span>Dir. ${escapeHtml(director)}</span>` : ''}
                 </div>` : ''}
                 
                 ${cast && cast.length ? `
@@ -656,13 +656,13 @@
             GamificationManager.triggerConfetti();
             const itemTypePlural = config.itemTypePlural || 'movies';
             const pastTense = config.actions.positive.pastTense || 'seen';
-            showToast(`🎉 ${result.milestone} ${itemTypePlural} ${pastTense}!`, 'success');
+            showToast(`${result.milestone} ${itemTypePlural} ${pastTense}!`, 'success');
         }
 
         // Check for rank up
         if (result.rankUp) {
             setTimeout(() => {
-                showToast(`${result.rankUp.emoji} Rank Up: ${result.rankUp.name}!`, 'success');
+                showToast(`Rank up: ${result.rankUp.name}!`, 'success');
             }, 500);
         }
 
@@ -813,7 +813,7 @@
             elements.soundOffIcon.classList.toggle('hidden', isEnabled);
         }
 
-        showToast(isEnabled ? '🔊 Sound On' : '🔇 Sound Off', 'success');
+        showToast(isEnabled ? 'Sound on' : 'Sound off', 'success');
     }
 
     // ===== MODAL FUNCTIONS =====
@@ -1350,14 +1350,19 @@ ${baseUrl}`;
     function updateBackground(movie) {
         if (!movie) return;
 
-        if (window.matchMedia('(min-width: 768px)').matches) {
-            const url = getPosterUrl(movie);
-            elements.app.style.setProperty('--bg-image', `url(${url})`);
-            elements.app.classList.add('has-bg');
+        // v3.0: ambient blurred backdrop on ALL devices. Prefer the wide
+        // backdrop image; fall back to the poster. Size by viewport so
+        // phones download a small source (it's blurred anyway).
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+        const size = isMobile ? 'w300' : 'w780';
+        const path = movie.backdrop_path || movie.poster_path || movie.poster;
+        if (!path) return;
 
-            // Apply to ::before pseudo-element via CSS custom property
-            document.documentElement.style.setProperty('--current-poster', `url(${url})`);
-        }
+        const url = path.startsWith('http')
+            ? path
+            : `https://image.tmdb.org/t/p/${size}${path}`;
+        elements.app.style.setProperty('--bg-image', `url(${url})`);
+        elements.app.classList.add('has-bg');
     }
 
     /**

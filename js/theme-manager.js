@@ -144,11 +144,12 @@ const ThemeManager = (function () {
         root.style.setProperty('--theme-background', theme.colors.background);
         root.style.setProperty('--theme-surface', theme.colors.surface);
         root.style.setProperty('--theme-card-glow', theme.colors.cardGlow);
-        root.style.setProperty('--theme-font', theme.font);
+        // Font is optional since v3.0 (one type system); kept for template compat
+        root.style.setProperty('--theme-font', theme.font || "'Inter', sans-serif");
 
         // Set data attribute for CSS selectors
         body.setAttribute('data-theme', theme.name);
-        body.setAttribute('data-pattern', theme.pattern);
+        body.setAttribute('data-pattern', theme.pattern || 'ambient');
 
         currentTheme = theme;
     }

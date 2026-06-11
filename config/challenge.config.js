@@ -78,77 +78,73 @@ const ChallengeConfig = {
     },
 
     // ===== THEMES =====
-    // Visual themes for each era
+    // Visual themes for each era (v3.0: one premium design system, eras
+    // express through a single refined accent + ambient tint — no font swaps)
     themes: {
         "1980s": {
             name: "1980s",
-            displayName: "80's Synthwave",
+            displayName: "The 1980s",
             colors: {
-                primary: "#00d4ff",
-                secondary: "#ff00ff",
-                accent: "#ffff00",
-                background: "#1a0a2e",
-                surface: "#2d1b4e",
-                cardGlow: "rgba(0, 212, 255, 0.4)"
+                primary: "#e879f9",   // refined magenta
+                secondary: "#22d3ee",
+                accent: "#f0abfc",
+                background: "#120a1d",
+                surface: "#1c1229",
+                cardGlow: "rgba(232, 121, 249, 0.22)"
             },
-            font: "'Press Start 2P', monospace",
-            pattern: "grid"
+            pattern: "ambient"
         },
         "1990s": {
             name: "1990s",
-            displayName: "90's Grunge",
+            displayName: "The 1990s",
             colors: {
-                primary: "#8b0000",
-                secondary: "#2f4f4f",
-                accent: "#daa520",
-                background: "#1a1a1a",
-                surface: "#2a2a2a",
-                cardGlow: "rgba(139, 0, 0, 0.4)"
+                primary: "#fbbf24",   // warm amber
+                secondary: "#f87171",
+                accent: "#fcd34d",
+                background: "#15100c",
+                surface: "#201813",
+                cardGlow: "rgba(251, 191, 36, 0.20)"
             },
-            font: "'Rock Salt', cursive",
-            pattern: "grunge"
+            pattern: "ambient"
         },
         "2000s": {
             name: "2000s",
-            displayName: "Y2K Future",
+            displayName: "The 2000s",
             colors: {
-                primary: "#00ff41",
-                secondary: "#0080ff",
-                accent: "#c0c0c0",
-                background: "#0a0a0f",
-                surface: "#1a1a2e",
-                cardGlow: "rgba(0, 255, 65, 0.3)"
+                primary: "#34d399",   // refined emerald
+                secondary: "#22d3ee",
+                accent: "#6ee7b7",
+                background: "#0a120e",
+                surface: "#131e18",
+                cardGlow: "rgba(52, 211, 153, 0.20)"
             },
-            font: "'Orbitron', sans-serif",
-            pattern: "matrix"
+            pattern: "ambient"
         },
         "2010s": {
             name: "2010s",
-            displayName: "Modern",
+            displayName: "The 2010s",
             colors: {
-                primary: "#1db954",
-                secondary: "#5865f2",
-                accent: "#ffffff",
-                background: "#0a0a0a",
-                surface: "#1a1a1a",
-                cardGlow: "rgba(29, 185, 84, 0.3)"
+                primary: "#60a5fa",   // refined blue
+                secondary: "#818cf8",
+                accent: "#93c5fd",
+                background: "#0a0e15",
+                surface: "#131a24",
+                cardGlow: "rgba(96, 165, 250, 0.20)"
             },
-            font: "'Inter', sans-serif",
-            pattern: "minimal"
+            pattern: "ambient"
         },
         "2020s": {
             name: "2020s",
-            displayName: "Neo Modern",
+            displayName: "The 2020s",
             colors: {
-                primary: "#a855f7",
-                secondary: "#ec4899",
-                accent: "#06b6d4",
-                background: "#09090b",
-                surface: "#18181b",
-                cardGlow: "rgba(168, 85, 247, 0.3)"
+                primary: "#a78bfa",   // refined violet
+                secondary: "#f472b6",
+                accent: "#c4b5fd",
+                background: "#0e0a16",
+                surface: "#181222",
+                cardGlow: "rgba(167, 139, 250, 0.20)"
             },
-            font: "'Inter', sans-serif",
-            pattern: "gradient"
+            pattern: "ambient"
         }
     },
 

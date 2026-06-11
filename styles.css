@@ -1,28 +1,28 @@
 /* ===== CSS Variables & Design Tokens ===== */
 :root {
     /* Base Colors */
-    --bg-void: #0a0a0a;
-    --bg-surface: #1a1a1a;
-    --bg-elevated: #252525;
-    --accent-seen: #00ff9d;
-    --accent-skip: #ff0055;
-    --accent-undo: #888888;
-    --text-primary: #f5f5f5;
-    --text-secondary: #888888;
-    --text-muted: #555555;
+    --bg-void: #0b0b0d;
+    --bg-surface: #17171a;
+    --bg-elevated: #222226;
+    --accent-seen: #34d399;
+    --accent-skip: #fb7185;
+    --accent-undo: #8b8b92;
+    --text-primary: #f4f4f5;
+    --text-secondary: #9b9ba3;
+    --text-muted: #5d5d66;
 
     /* Theme Variables (overridden by JS) */
-    --theme-primary: #00ff9d;
-    --theme-secondary: #ff0055;
-    --theme-accent: #ffffff;
-    --theme-background: #0a0a0a;
-    --theme-surface: #1a1a1a;
-    --theme-card-glow: rgba(0, 255, 157, 0.3);
+    --theme-primary: #a78bfa;
+    --theme-secondary: #f472b6;
+    --theme-accent: #c4b5fd;
+    --theme-background: #0b0b0d;
+    --theme-surface: #17171a;
+    --theme-card-glow: rgba(167, 139, 250, 0.2);
     --theme-font: 'Inter', sans-serif;
 
-    /* Glows */
-    --glow-seen: 0 0 30px rgba(0, 255, 157, 0.4);
-    --glow-skip: 0 0 30px rgba(255, 0, 85, 0.4);
+    /* Glows (restrained) */
+    --glow-seen: 0 4px 24px rgba(52, 211, 153, 0.25);
+    --glow-skip: 0 4px 24px rgba(251, 113, 133, 0.25);
 
     /* Spacing */
     --space-xs: 4px;
@@ -93,9 +93,8 @@ body {
 .progress-bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--accent-seen), #00ccff);
+    background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
     transition: width 0.4s var(--ease-out-expo);
-    box-shadow: 0 0 10px var(--accent-seen);
 }
 
 /* ===== Private Browsing Warning Banner ===== */
@@ -192,16 +191,17 @@ body {
 }
 
 .decade-badge {
-    background: var(--bg-elevated);
-    padding: var(--space-sm) var(--space-lg);
+    background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    padding: 6px 14px;
     border-radius: 100px;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    margin-left: var(--space-lg);
-    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+    margin-left: var(--space-md);
+    color: var(--theme-primary);
+    transition: color 0.5s ease, border-color 0.5s ease, background 0.5s ease;
 }
 
 /* ===== Card Stack Container ===== */
@@ -228,7 +228,10 @@ body {
     height: 100%;
     border-radius: 20px;
     background: var(--bg-surface);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow:
+        0 24px 48px -12px rgba(0, 0, 0, 0.6),
+        0 8px 20px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
     /* 3D Transform Properties */
     perspective: 1000px;
     cursor: grab;
@@ -421,22 +424,25 @@ body {
 
 /* Card Stacking Effect - cards peek from behind/below */
 .movie-card:nth-child(2) {
-    transform: scale(0.98) translateY(-8px);
-    filter: brightness(0.7);
+    transform: scale(0.965) translateY(-12px);
+    filter: brightness(0.72) saturate(0.85);
     z-index: -1;
+    transition: transform 0.35s var(--ease-out-expo), filter 0.35s ease;
 }
 
 .movie-card:nth-child(3) {
-    transform: scale(0.96) translateY(-14px);
-    filter: brightness(0.5);
+    transform: scale(0.93) translateY(-22px);
+    filter: brightness(0.5) saturate(0.7);
     z-index: -2;
+    transition: transform 0.35s var(--ease-out-expo), filter 0.35s ease;
 }
 
 .movie-card:nth-child(n+4) {
-    transform: scale(0.94) translateY(-18px);
-    filter: brightness(0.3);
+    transform: scale(0.9) translateY(-30px);
+    filter: brightness(0.32) saturate(0.6);
     pointer-events: none;
     z-index: -3;
+    transition: transform 0.35s var(--ease-out-expo), filter 0.35s ease;
 }
 
 /* Card Content */
@@ -453,51 +459,61 @@ body {
     left: 0;
     right: 0;
     padding: var(--space-lg);
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+    padding-top: 72px;
+    background: linear-gradient(0deg,
+            rgba(0, 0, 0, 0.92) 0%,
+            rgba(0, 0, 0, 0.62) 45%,
+            rgba(0, 0, 0, 0.25) 75%,
+            transparent 100%);
 }
 
 .card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: var(--space-xs);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .card-year {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
+    letter-spacing: 0.06em;
 }
 
 /* Swipe Indicators */
 .swipe-indicator {
     position: absolute;
     top: var(--space-lg);
-    padding: var(--space-sm) var(--space-lg);
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1.25rem;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1.1rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     opacity: 0;
-    transform: scale(0.8) rotate(-15deg);
+    transform: scale(0.85) rotate(-8deg);
     transition: opacity 0.2s, transform 0.2s;
     pointer-events: none;
+    backdrop-filter: blur(4px);
 }
 
 .swipe-indicator.seen {
     right: var(--space-lg);
-    background: var(--accent-seen);
-    color: var(--bg-void);
-    border: 3px solid var(--accent-seen);
+    background: color-mix(in srgb, var(--accent-seen) 90%, black);
+    color: #06251a;
+    box-shadow: var(--glow-seen);
 }
 
 .swipe-indicator.skip {
     left: var(--space-lg);
-    background: var(--accent-skip);
-    color: white;
-    border: 3px solid var(--accent-skip);
-    transform: scale(0.8) rotate(15deg);
+    background: color-mix(in srgb, var(--accent-skip) 90%, black);
+    color: #fff;
+    box-shadow: var(--glow-skip);
+    transform: scale(0.85) rotate(8deg);
 }
 
 .movie-card.hint-right .swipe-indicator.seen,
@@ -620,8 +636,10 @@ body {
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    border: 2px solid;
-    background: transparent;
+    border: 1.5px solid;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     transition: all 0.2s var(--ease-out-expo);
 }
@@ -787,23 +805,66 @@ kbd {
     }
 }
 
-/* ===== Background Blur Effect (Desktop) ===== */
-@media (min-width: 768px) {
-    #app::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background-size: cover;
-        background-position: center;
-        filter: blur(60px) brightness(0.3);
-        transform: scale(1.2);
-        z-index: -1;
-        opacity: 0;
-        transition: opacity 0.5s ease, background-image 0.5s ease;
+/* ===== Ambient Poster Backdrop (all devices, v3.0) ===== */
+/* The current movie's artwork, heavily blurred and dimmed, fills the screen
+   behind the cards — every swipe quietly repaints the whole atmosphere. */
+#app::before {
+    content: '';
+    position: fixed;
+    inset: -48px;
+    background-position: center;
+    background-size: cover;
+    filter: blur(44px) brightness(0.38) saturate(1.3);
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    pointer-events: none;
+}
+
+#app.has-bg::before {
+    background-image:
+        radial-gradient(ellipse 100% 70% at 50% 0%,
+            color-mix(in srgb, var(--theme-primary) 16%, transparent) 0%,
+            transparent 65%),
+        var(--bg-image);
+    opacity: 1;
+}
+
+/* New top card settles in subtly */
+.movie-card:first-child {
+    animation: cardSettle 0.32s var(--ease-out-expo);
+}
+
+@keyframes cardSettle {
+    from {
+        transform: scale(0.965) translateY(-12px);
+        filter: brightness(0.8);
     }
 
-    #app.has-bg::before {
-        opacity: 1;
+    to {
+        transform: scale(1) translateY(0);
+        filter: brightness(1);
+    }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+
+    .movie-card:first-child,
+    .completion-icon,
+    .streak-indicator,
+    .decade-toast {
+        animation: none !important;
+    }
+
+    .confetti-piece {
+        display: none !important;
+    }
+
+    .progress-bar,
+    .card-inner,
+    #app::before {
+        transition: none !important;
     }
 }
 
@@ -1317,161 +1378,43 @@ kbd {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* ===== Decade Theme Styles ===== */
+/* ===== Era Theming (v3.0: one premium system, ambient accents) ===== */
 
 /* Theme transitions */
 body {
-    transition: background-color 0.5s ease, color 0.3s ease;
+    transition: background-color 0.6s ease, color 0.3s ease;
 }
 
-/* Apply theme colors to key elements */
 body[data-theme] {
     background-color: var(--theme-background);
 }
 
-body[data-theme] .decade-badge {
-    background: var(--theme-primary);
-    color: var(--theme-background);
-}
-
-/* Keep original button colors - don't override with theme */
-/* The green/red buttons are already well-designed */
-
-body[data-theme] .progress-fill {
-    background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
-}
-
-body[data-theme] .swipe-indicator.seen {
-    background: var(--theme-primary);
-}
-
-/* 1980s Neon Theme - BOLD synthwave */
-body[data-theme="1980s"] {
-    background: linear-gradient(180deg, #1a0a3e 0%, #0d051a 50%, #1a0825 100%);
-}
-
-body[data-theme="1980s"]::before {
+/* Ambient era tint: one soft radial wash in the era's accent color */
+body[data-theme]::before {
     content: '';
     position: fixed;
     inset: 0;
     background:
-        /* Neon grid lines - more visible */
-        linear-gradient(transparent 0%, transparent 48%, rgba(255, 0, 255, 0.15) 50%, transparent 52%, transparent 100%),
-        linear-gradient(90deg, transparent 0%, transparent 48%, rgba(0, 255, 255, 0.12) 50%, transparent 52%, transparent 100%);
-    background-size: 50px 50px;
+        radial-gradient(ellipse 90% 60% at 50% -10%,
+            color-mix(in srgb, var(--theme-primary) 14%, transparent) 0%,
+            transparent 60%),
+        radial-gradient(ellipse 70% 50% at 85% 105%,
+            color-mix(in srgb, var(--theme-secondary) 9%, transparent) 0%,
+            transparent 55%);
     pointer-events: none;
     z-index: 0;
-    opacity: 0.8;
+    transition: opacity 0.6s ease;
 }
 
-/* Neon glow at bottom edge for 80s */
-body[data-theme="1980s"]::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 150px;
-    background: linear-gradient(to top, rgba(255, 0, 255, 0.2), transparent);
-    pointer-events: none;
-    z-index: 0;
-}
-
-body[data-theme="1980s"] .decade-badge {
-    background: linear-gradient(135deg, #ff00ff, #cc00cc);
-    color: #fff;
-    border: 2px solid #00ffff;
-    text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
-    font-family: 'Inter', sans-serif;
-}
-
-/* 1990s Grunge Theme - Dark and edgy */
-body[data-theme="1990s"] {
-    background: linear-gradient(180deg, #1a1412 0%, #0a0808 100%);
-}
-
-body[data-theme="1990s"]::before {
+/* Film grain: barely-there shared texture for depth */
+body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background:
-        radial-gradient(ellipse at 30% 20%, rgba(139, 0, 0, 0.15) 0%, transparent 40%),
-        radial-gradient(ellipse at 70% 80%, rgba(139, 69, 19, 0.1) 0%, transparent 40%);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.035;
     pointer-events: none;
-    z-index: 0;
-}
-
-body[data-theme="1990s"] .decade-badge {
-    font-family: 'Rock Salt', cursive;
-    font-size: 0.6rem;
-    letter-spacing: 0;
-    background: #8b0000;
-    border: 2px solid #5a0000;
-    text-shadow: 1px 1px 0 #000;
-}
-
-body[data-theme="1990s"] .movie-card {
-    box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.8),
-        inset 0 0 60px rgba(139, 0, 0, 0.1);
-}
-
-/* 2000s Y2K Theme - Matrix/Tech vibes */
-body[data-theme="2000s"] {
-    background: linear-gradient(180deg, #0a0f0a 0%, #001a00 50%, #000a05 100%);
-}
-
-body[data-theme="2000s"]::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at center, rgba(0, 255, 65, 0.12) 0%, transparent 50%),
-        linear-gradient(180deg, transparent 0%, rgba(0, 255, 0, 0.03) 100%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-body[data-theme="2000s"] .decade-badge {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    background: linear-gradient(135deg, #00ff41, #00aa2a);
-    color: #000;
-    border: 1px solid #00ff41;
-    text-shadow: none;
-}
-
-/* 2010s Modern Theme - Clean dark */
-body[data-theme="2010s"] {
-    background: linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
-}
-
-body[data-theme="2010s"] .decade-badge {
-    background: linear-gradient(135deg, #1db954, #1aa34a);
-    color: #fff;
-}
-
-/* 2020s Neo Modern Theme - Vibrant gradients */
-body[data-theme="2020s"] {
-    background: linear-gradient(135deg, #0f0515 0%, #150520 50%, #0a0a15 100%);
-}
-
-body[data-theme="2020s"]::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 20% 30%, rgba(168, 85, 247, 0.2) 0%, transparent 40%),
-        radial-gradient(ellipse at 80% 70%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-body[data-theme="2020s"] .decade-badge {
-    background: linear-gradient(135deg, #a855f7, #ec4899);
-    color: #fff;
+    z-index: 1;
 }
 
 /* ===== Card Flip Styles ===== */

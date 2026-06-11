@@ -82,6 +82,14 @@
 <details>
 <summary><strong>📝 Changelog</strong></summary>
 
+### Jun 11, 2026 — v3.0.0 "Premium Redesign"
+- **One type system:** Press Start 2P, Rock Salt, and Orbitron removed; Inter (400–800) everywhere. Smaller font payload, no costume changes between decades.
+- **Era theming refined:** each decade is now one desaturated accent color + a soft ambient radial wash (magenta / amber / emerald / blue / violet). Neon grids and matrix overlays removed; subtle shared film-grain layer added.
+- **Poster as hero:** blurred movie-backdrop atmosphere layer now works (it was silently broken) and extends to mobile, sized per device (w300/w780).
+- **Emoji purge:** all emoji-as-UI replaced with consistent SVG icons (streak flame, backup, share buttons, completion clapperboard); toasts are clean text. Share text keeps its emojis on purpose.
+- **Component polish:** quiet era pill, glassy action buttons, layered card shadows, taller smoother poster scrim, refined swipe indicators, card-settle entrance animation, de-glowed progress bar, refreshed confetti palette.
+- **Accessibility:** prefers-reduced-motion now disables decorative animation.
+
 ### Jun 11, 2026 — v2.1.0 "Decade Split"
 - **Performance:** Movie data split into 5 per-decade JSON chunks + manifest (`data/chunks/`), loaded asynchronously by new `js/core/data-loader.js`. First-load transfer drops ~5x (1.4MB → 280KB gzipped); page no longer blocks on a 4.5MB script.
 - **Data diet:** Stripped 8 unused fields from runtime data (4.53MB → 2.66MB total); added `tier: "iconic"` flag (top 5% by votes) for the upcoming v3.1 anticipation features.
