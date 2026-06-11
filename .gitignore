@@ -14,3 +14,9 @@ scripts/
 
 # Data builder (not needed for end users)
 data-builder.html
+
+# Local secrets (never commit)
+.tmdb_key
+
+# GitHub push token (never commit)
+.github_token

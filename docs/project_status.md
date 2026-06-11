@@ -6,7 +6,7 @@
 | **Version** | v2.0 |
 | **Updated** | February 11, 2026 |
 | **One-liner** | Swipe-style movie tracker for 5,000+ films (1980–2025). Core app is live; now refining the movie list via Hybrid Curation. |
-| **TMDB Key** | `8f486ffcb9d0d56632530bdf8c977cd3` |
+| **TMDB Key** | Stored locally in `.tmdb_key` (gitignored, never committed) |
 
 ---
 
@@ -81,6 +81,9 @@
 
 <details>
 <summary><strong>📝 Changelog</strong></summary>
+
+### Jun 11, 2026
+- **Security:** Removed TMDB API key from docs. Key now lives in a gitignored `.tmdb_key` file; all local scripts read it from there (or the `TMDB_API_KEY` environment variable). Decision: key not rotated (accepted risk — read-only, no billing). Note: key remains visible in old git history.
 
 ### Feb 12, 2026
 - **Data Enrichment:** Fetching Director/Cast for all movies.
