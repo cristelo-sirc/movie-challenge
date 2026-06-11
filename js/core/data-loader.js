@@ -25,7 +25,7 @@ const DataLoader = (function () {
     let fullyLoadedResolvers = [];
     let callbacks = {};
 
-    const ASSET_VERSION = '26';   // cache-buster, keep in sync with index.html
+    const ASSET_VERSION = '27';   // cache-buster, keep in sync with index.html
 
     function manifestUrl() {
         const cfg = (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized)

@@ -85,6 +85,99 @@
     // Track last backup reminder milestone
     let lastBackupReminder = 0;
 
+    // ===== Anticipation layer state (v3.1) =====
+    let ratingsSinceDrop = 0;     // counts toward the next stat drop
+    let cardsSinceIconic = 99;    // rate-limits iconic entrance effects
+    let lastIconicId = null;      // never re-trigger for the same movie
+
+    /**
+     * Vibration feedback (Android etc.; iPhones ignore the API)
+     */
+    function vibrate(ms) {
+        const enabled = config && config.anticipation && config.anticipation.haptics !== false;
+        if (enabled && navigator.vibrate) {
+            try { navigator.vibrate(ms); } catch (e) { /* no-op */ }
+        }
+    }
+
+    /**
+     * Called once per rating (seen or skip) — drives stat drops and
+     * the iconic-card rate limiter.
+     */
+    function anticipationOnRated(ratedMovie, wasSeen) {
+        cardsSinceIconic++;
+        vibrate(8);
+
+        const interval = (config.anticipation && config.anticipation.statDropInterval) || 0;
+        if (interval <= 0) return;
+
+        ratingsSinceDrop++;
+        if (ratingsSinceDrop < interval) return;
+        if (typeof DataLoader === 'undefined' || !DataLoader.isFullyLoaded) return;
+
+        ratingsSinceDrop = 0;
+        // Wait for the swipe to land and state to update, then compute
+        setTimeout(() => {
+            try {
+                const state = SlidingWindow.getState();
+                const insight = StatsEngine.computeInsight({
+                    items: ItemManager.getAll(),
+                    justRated: ratedMovie,
+                    wasSeen: wasSeen,
+                    seen: state.seen,
+                    notSeen: state.notSeen,
+                    history: state.history,
+                    eras: config.eras.groups,
+                    ranks: (config.gamification && config.gamification.ranks) || [],
+                });
+                if (insight) showStatDrop(insight);
+            } catch (e) {
+                console.error('Stat drop failed:', e);
+            }
+        }, 650);
+    }
+
+    /**
+     * Show a stat-drop interstitial. Dismiss on tap, any key, or auto after 6s.
+     * Never touches ratings, history, or saved state.
+     */
+    function showStatDrop(insight) {
+        if (document.querySelector('.stat-drop')) return;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'stat-drop';
+        overlay.innerHTML = `
+            <div class="stat-drop-card">
+                <div class="stat-drop-kicker">Stat drop</div>
+                <h3>${escapeHtml(insight.title)}</h3>
+                <p>${escapeHtml(insight.line)}</p>
+                <div class="stat-drop-hint">Tap to continue</div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        vibrate(20);
+
+        const dismiss = () => {
+            overlay.classList.add('closing');
+            setTimeout(() => overlay.remove(), 250);
+        };
+        overlay.addEventListener('click', dismiss);
+        setTimeout(() => { if (overlay.parentNode) dismiss(); }, 6000);
+    }
+
+    /**
+     * Dismiss any open stat drop (keyboard path). Returns true if one was open.
+     */
+    function dismissStatDropIfOpen() {
+        const overlay = document.querySelector('.stat-drop');
+        if (overlay) {
+            overlay.classList.add('closing');
+            setTimeout(() => overlay.remove(), 250);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Initialize the application (async since v2.1: data loads in chunks)
      */
@@ -375,19 +468,31 @@
     }
 
     /**
-     * Show decade transition toast
+     * Cinematic decade transition (v3.1): brief full-screen title card.
+     * Tap to skip; auto-dismisses.
      */
     function showDecadeToast(theme) {
-        const toast = document.createElement('div');
-        toast.className = 'decade-toast';
-        toast.innerHTML = `
-            <h2>Welcome to the ${theme.displayName}</h2>
-            <p>Time travel mode activated</p>
-        `;
-        document.body.appendChild(toast);
+        // Never stack two
+        const existing = document.querySelector('.decade-takeover');
+        if (existing) existing.remove();
 
-        // Remove after animation
-        setTimeout(() => toast.remove(), 2500);
+        const takeover = document.createElement('div');
+        takeover.className = 'decade-takeover';
+        takeover.innerHTML = `
+            <div class="dt-inner">
+                <div class="dt-kicker">Now entering</div>
+                <h1>${escapeHtml(theme.displayName || theme.name)}</h1>
+            </div>
+        `;
+        document.body.appendChild(takeover);
+        vibrate(20);
+
+        const dismiss = () => {
+            takeover.classList.add('closing');
+            setTimeout(() => takeover.remove(), 350);
+        };
+        takeover.addEventListener('click', dismiss);
+        setTimeout(() => { if (takeover.parentNode) dismiss(); }, 1700);
     }
 
     /**
@@ -434,6 +539,19 @@
         if (topCard) {
             attachDragListeners(topCard);
         }
+
+        // Iconic entrance effect (rate-limited, once per movie)
+        const top = movies[0];
+        if (top && top.tier === 'iconic' && top.id !== lastIconicId) {
+            const minGap = (config.anticipation && config.anticipation.iconicMinGap) || 8;
+            if (cardsSinceIconic >= minGap) {
+                lastIconicId = top.id;
+                cardsSinceIconic = 0;
+                topCard.classList.add('iconic-reveal');
+                AudioManager.playIconicSound();
+                vibrate(15);
+            }
+        }
     }
 
     /**
@@ -444,7 +562,7 @@
      */
     function createCardElement(movie, isTop) {
         const card = document.createElement('div');
-        card.className = 'movie-card';
+        card.className = 'movie-card' + (movie.tier === 'iconic' ? ' iconic-card' : '');
         card.dataset.id = movie.id;
 
         // Generate rating stars
@@ -647,8 +765,10 @@
      * Handle "Seen" action gamification
      */
     function handleSeenAction() {
+        const ratedMovie = SlidingWindow.getCurrentMovie();
         const result = GamificationManager.recordSeen();
         updateStreakDisplay(result.streak);
+        anticipationOnRated(ratedMovie, true);
 
         // Check for milestone
         if (result.milestone) {
@@ -676,8 +796,10 @@
      * Handle "Skip" action gamification
      */
     function handleSkipAction() {
+        const ratedMovie = SlidingWindow.getCurrentMovie();
         GamificationManager.recordSkip();
         hideStreakDisplay();
+        anticipationOnRated(ratedMovie, false);
     }
 
     /**
@@ -692,11 +814,9 @@
         elements.streakCount.textContent = streak;
         elements.streakIndicator.classList.remove('hidden');
 
-        if (streak >= 5) {
-            elements.streakIndicator.classList.add('hot');
-        } else {
-            elements.streakIndicator.classList.remove('hot');
-        }
+        // Living streak (v3.1): visual stages escalate at 10 and 25
+        elements.streakIndicator.classList.toggle('hot', streak >= 10 && streak < 25);
+        elements.streakIndicator.classList.toggle('inferno', streak >= 25);
     }
 
     /**
@@ -704,7 +824,7 @@
      */
     function hideStreakDisplay() {
         elements.streakIndicator.classList.add('hidden');
-        elements.streakIndicator.classList.remove('hot');
+        elements.streakIndicator.classList.remove('hot', 'inferno');
     }
 
     /**
@@ -1250,6 +1370,12 @@ ${baseUrl}`;
     function handleKeyboard(e) {
         // Ignore if typing in an input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        // Any key dismisses an open stat drop (and does nothing else)
+        if (dismissStatDropIfOpen()) {
+            e.preventDefault();
+            return;
+        }
 
         // Close modal on Escape
         if (e.key === 'Escape' && !elements.modalOverlay.classList.contains('hidden')) {

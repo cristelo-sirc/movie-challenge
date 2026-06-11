@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Phase** | Implementation & Content Refinement |
-| **Version** | v2.0 |
-| **Updated** | February 11, 2026 |
+| **Version** | v3.1.0 |
+| **Updated** | June 11, 2026 |
 | **One-liner** | Swipe-style movie tracker for 5,000+ films (1980–2025). Core app is live; now refining the movie list via Hybrid Curation. |
 | **TMDB Key** | Stored locally in `.tmdb_key` (gitignored, never committed) |
 
@@ -81,6 +81,14 @@
 
 <details>
 <summary><strong>📝 Changelog</strong></summary>
+
+### Jun 11, 2026 — v3.1.0 "Anticipation Layer"
+- **Iconic cards:** top-5%-by-votes movies carry a quiet gold ring and enter with a one-time shine sweep + shimmer sound (rate-limited via `anticipation.iconicMinGap`).
+- **Stat drops:** every 25 ratings (configurable), a dismissible insight card computed locally by new `js/stats-engine.js` — year completions, director counts ("That's your 3rd Kubrick"), decade-progress milestones, rank distance, recent seen-rate. Never touches ratings/undo/save state.
+- **Cinematic decade transitions:** the small toast is now a brief full-screen era title card (tap to skip, auto-dismisses in 1.7s).
+- **Living streak + haptics:** streak pill escalates at 10 (hot) and 25 (inferno); light vibration on each rating with stronger pulses at moments (Android — iPhones ignore the vibration API).
+- All frequencies tunable in `challenge.config.js` → `anticipation`. Honors sound toggle and reduced-motion.
+- Tests: `scripts/test_phase3.js` (13 stats-engine checks); Phase 1 harness still green (34/34).
 
 ### Jun 11, 2026 — v3.0.0 "Premium Redesign"
 - **One type system:** Press Start 2P, Rock Salt, and Orbitron removed; Inter (400–800) everywhere. Smaller font payload, no costume changes between decades.

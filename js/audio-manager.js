@@ -228,6 +228,21 @@ const AudioManager = (function () {
     }
 
     /**
+     * Iconic movie reveal (soft shimmer arpeggio)
+     */
+    function playIconicSound() {
+        if (!isEnabled) return;
+        ensureReady();
+        if (!audioContext) return;
+
+        // Gentle ascending shimmer: E5 - G#5 - B5 - E6
+        const notes = [659, 831, 988, 1319];
+        notes.forEach((freq, i) => {
+            setTimeout(() => playTone(freq, 0.3, 'sine', 0.12), i * 70);
+        });
+    }
+
+    /**
      * Streak increment sound
      */
     function playStreakSound(streakCount) {
@@ -251,6 +266,7 @@ const AudioManager = (function () {
         playUndoSound,
         playDecadeTransition,
         playMilestoneSound,
+        playIconicSound,
         playStreakSound
     };
 })();

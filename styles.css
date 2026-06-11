@@ -847,14 +847,209 @@ kbd {
     }
 }
 
+/* ===== Anticipation Layer (v3.1) ===== */
+
+/* Iconic movies: quiet gold ring all the time... */
+.movie-card.iconic-card {
+    box-shadow:
+        0 24px 48px -12px rgba(0, 0, 0, 0.6),
+        0 8px 20px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(251, 191, 36, 0.35),
+        0 0 28px rgba(251, 191, 36, 0.12);
+}
+
+/* ...and a one-time shine sweep on reveal */
+.movie-card.iconic-reveal .card-front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.14) 44%,
+            rgba(251, 191, 36, 0.28) 50%,
+            rgba(255, 255, 255, 0.14) 56%,
+            transparent 70%);
+    transform: translateX(-130%);
+    animation: iconicSweep 1.1s ease-out 0.2s forwards;
+    pointer-events: none;
+    z-index: 5;
+}
+
+@keyframes iconicSweep {
+    to {
+        transform: translateX(130%);
+    }
+}
+
+/* Stat drop interstitial */
+.stat-drop {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.25s ease;
+    cursor: pointer;
+}
+
+.stat-drop.closing {
+    animation: fadeOut 0.25s ease forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+    }
+}
+
+.stat-drop-card {
+    background: var(--theme-surface, var(--bg-surface));
+    border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, transparent);
+    border-radius: 20px;
+    padding: 28px 26px 22px;
+    max-width: 330px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--theme-card-glow);
+    animation: statPop 0.35s var(--ease-out-back);
+}
+
+@keyframes statPop {
+    from {
+        transform: scale(0.88) translateY(10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.stat-drop-kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--theme-primary);
+    margin-bottom: 10px;
+}
+
+.stat-drop-card h3 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.stat-drop-card p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.stat-drop-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Cinematic decade takeover */
+.decade-takeover {
+    position: fixed;
+    inset: 0;
+    z-index: 450;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 40%,
+            color-mix(in srgb, var(--theme-primary) 22%, transparent) 0%,
+            transparent 70%),
+        rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease;
+    cursor: pointer;
+}
+
+.decade-takeover.closing {
+    animation: fadeOut 0.35s ease forwards;
+}
+
+.dt-inner {
+    text-align: center;
+    animation: dtRise 0.5s var(--ease-out-expo);
+}
+
+@keyframes dtRise {
+    from {
+        transform: translateY(24px) scale(0.96);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.dt-kicker {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--theme-primary);
+    margin-bottom: 12px;
+}
+
+.decade-takeover h1 {
+    font-size: clamp(2.2rem, 9vw, 3.6rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #fff;
+    text-shadow: 0 0 60px var(--theme-card-glow);
+}
+
+/* Living streak: stage 3 */
+.streak-indicator.inferno {
+    background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);
+    animation: streakPulse 0.5s ease-out, infernoGlow 0.9s ease-in-out infinite;
+    transform: translateX(-50%) scale(1.08);
+}
+
+@keyframes infernoGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 24px rgba(245, 158, 11, 0.55);
+    }
+
+    50% {
+        box-shadow: 0 4px 40px rgba(239, 68, 68, 0.8), 0 0 56px rgba(236, 72, 153, 0.5);
+    }
+}
+
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
 
     .movie-card:first-child,
     .completion-icon,
     .streak-indicator,
-    .decade-toast {
+    .decade-toast,
+    .stat-drop-card,
+    .dt-inner {
         animation: none !important;
+    }
+
+    .movie-card.iconic-reveal .card-front::after {
+        display: none !important;
     }
 
     .confetti-piece {

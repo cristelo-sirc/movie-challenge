@@ -207,6 +207,17 @@ const ChallengeConfig = {
         url: null,
     },
 
+    // ===== ANTICIPATION (v3.1) =====
+    // Variable-reward layer: tune frequencies here
+    anticipation: {
+        // Show a personal "stat drop" insight card every N ratings (0 = off)
+        statDropInterval: 25,
+        // Minimum cards between iconic-movie entrance effects
+        iconicMinGap: 8,
+        // Vibration feedback on supported devices (Android; iPhones ignore it)
+        haptics: true,
+    },
+
     // ===== UI SETTINGS =====
     ui: {
         // Number of cards to render in the DOM
