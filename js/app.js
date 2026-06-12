@@ -90,6 +90,10 @@
     let cardsSinceIconic = 99;    // rate-limits iconic entrance effects
     let lastIconicId = null;      // never re-trigger for the same movie
 
+    // ===== Year transition card state (v3.2) =====
+    let currentYear = null;            // year of the top card we last reacted to
+    const shownYears = new Set();      // years whose card has already been shown this session
+
     /**
      * Vibration feedback (Android etc.; iPhones ignore the API)
      */
@@ -392,14 +396,24 @@
         // Update background (desktop)
         updateBackground(data.window[0]);
 
-        // Update theme based on current item's era field (year for movies)
+        // Update theme based on current item's era field (year for movies).
+        // The colour theme still changes by decade; the takeover card now fires
+        // by year (see below).
         if (data.window[0]) {
             const eraValue = ItemManager.getEraValue(data.window[0]);
-            const themeResult = ThemeManager.updateForYear(eraValue);
-            if (themeResult.changed && themeResult.from !== null) {
-                // Era changed! Celebrate
-                AudioManager.playDecadeTransition();
-                showDecadeToast(themeResult.theme);
+            ThemeManager.updateForYear(eraValue);
+
+            // Year transition card (v3.2): show when we advance into a new year.
+            const year = parseInt(eraValue, 10);
+            if (!Number.isNaN(year)) {
+                // Don't fire on the very first render (fresh load or resume);
+                // only on an actual forward transition we haven't shown yet.
+                if (currentYear !== null && year > currentYear && !shownYears.has(year)) {
+                    shownYears.add(year);
+                    AudioManager.playDecadeTransition();
+                    showYearCard(year);
+                }
+                currentYear = year;
             }
         }
 
@@ -468,20 +482,52 @@
     }
 
     /**
-     * Cinematic decade transition (v3.1): brief full-screen title card.
-     * Tap to skip; auto-dismisses.
+     * Cinematic year transition (v3.2): full-screen title card for a new year,
+     * with up to three cinema fun facts and a famous quote from a film of that
+     * year. Tap anywhere to dismiss (no auto-dismiss, since there's more to read).
+     * @param {number} year
      */
-    function showDecadeToast(theme) {
+    function showYearCard(year) {
         // Never stack two
         const existing = document.querySelector('.decade-takeover');
         if (existing) existing.remove();
 
+        // Look up curated content; render gracefully if a year has no entry.
+        const data = (typeof window !== 'undefined' && window.YEAR_FACTS)
+            ? window.YEAR_FACTS[year]
+            : null;
+
+        let factsHtml = '';
+        if (data && Array.isArray(data.facts) && data.facts.length) {
+            const items = data.facts
+                .map(f => `<li>${escapeHtml(f)}</li>`)
+                .join('');
+            factsHtml = `<ul class="dt-facts">${items}</ul>`;
+        }
+
+        let quoteHtml = '';
+        if (data && data.quote && data.quote.text) {
+            const attribution = [data.quote.who, data.quote.film]
+                .filter(Boolean)
+                .map(escapeHtml)
+                .join(' — ');
+            quoteHtml = `
+                <figure class="dt-quote">
+                    <blockquote>&ldquo;${escapeHtml(data.quote.text)}&rdquo;</blockquote>
+                    ${attribution ? `<figcaption>${attribution}</figcaption>` : ''}
+                </figure>
+            `;
+        }
+
         const takeover = document.createElement('div');
         takeover.className = 'decade-takeover';
         takeover.innerHTML = `
-            <div class="dt-inner">
+            <div class="dt-inner dt-year">
                 <div class="dt-kicker">Now entering</div>
-                <h1>${escapeHtml(theme.displayName || theme.name)}</h1>
+                <h1>${year}</h1>
+                ${factsHtml}
+                ${quoteHtml}
+                <div class="dt-hint">Tap anywhere to continue</div>
             </div>
         `;
         document.body.appendChild(takeover);
@@ -492,7 +538,6 @@
             setTimeout(() => takeover.remove(), 350);
         };
         takeover.addEventListener('click', dismiss);
-        setTimeout(() => { if (takeover.parentNode) dismiss(); }, 1700);
     }
 
     /**

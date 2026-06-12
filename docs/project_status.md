@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Phase** | Implementation & Content Refinement |
-| **Version** | v3.1.0 |
-| **Updated** | June 11, 2026 |
+| **Version** | v3.2.0 |
+| **Updated** | June 12, 2026 |
 | **One-liner** | Swipe-style movie tracker for 5,000+ films (1980–2025). Core app is live; now refining the movie list via Hybrid Curation. |
 | **TMDB Key** | Stored locally in `.tmdb_key` (gitignored, never committed) |
 
@@ -81,6 +81,14 @@
 
 <details>
 <summary><strong>📝 Changelog</strong></summary>
+
+### Jun 12, 2026 — v3.2.0 "Year by Year"
+- **Yearly transition card:** the full-screen takeover now fires on every *year* change (1980→1981→…) instead of only at decade boundaries (~46 cards per full pass vs. 4). Color theming still changes by decade, unchanged.
+- **Curated content:** new `data/year-facts.js` holds up to 3 movie/cinema fun facts per year (box-office milestones, Academy Awards) plus one famous quote drawn from a film **verified to exist in the dataset** for that year. 45 of 46 years have a quote; 2025 shows facts only (no famous in-dataset quote could be reliably verified post-knowledge-cutoff).
+- **Dismissal:** tap-only (auto-dismiss removed) since there's more to read. Card scrolls if content exceeds the viewport.
+- **Safeguards:** never fires on first render or on resume; fires forward-only; a `shownYears` set prevents re-firing when undoing back across a boundary. Renders gracefully when a year has no facts/quote.
+- **Accuracy:** 2024/2025 facts web-verified (97th & 98th Academy Awards, box-office records). All 45 quotes auto-checked against per-year dataset titles; render + escaping tested across all 46 years (0 failures).
+- Files: added `data/year-facts.js`; modified `js/app.js` (year trigger + `showYearCard`), `styles.css` (card layout), `index.html` (script load + cache-bust v=28).
 
 ### Jun 11, 2026 — v3.1.0 "Anticipation Layer"
 - **Iconic cards:** top-5%-by-votes movies carry a quiet gold ring and enter with a one-time shine sweep + shimmer sound (rate-limited via `anticipation.iconicMinGap`).

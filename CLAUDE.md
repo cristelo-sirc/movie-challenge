@@ -2,6 +2,24 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Yearly Transition Card (Jun 2026) — v3.2.0
+
+### Overview
+Expanded the decade transition takeover into a per-year transition card. It now fires on each year change (1980→1981→…) and shows up to 3 movie/cinema fun facts about that year plus one famous quote from a film released that year. Color theming still changes by decade (unchanged).
+
+### Files
+| File | Change |
+|------|--------|
+| `data/year-facts.js` | **New.** `window.YEAR_FACTS` — per-year `{ facts:[…], quote:{text,film,who}|null }`. 1980–2025; each quote's film is verified to exist in that year's movie data. 2025 has no quote (none reliably verifiable post-cutoff). |
+| `js/app.js` | Added `currentYear` + `shownYears` state; year-change trigger in `handleUpdate` (forward-only, not on first render/resume, no re-fire on undo); replaced `showDecadeToast` with `showYearCard` (renders facts + quote, tap-only dismiss). |
+| `styles.css` | Added `.dt-year`, `.dt-facts`, `.dt-quote`, `.dt-hint`; card scrolls if taller than viewport. |
+| `index.html` | Loads `data/year-facts.js`; cache-bust bumped `v=27`→`v=28`. |
+
+### Notes / Limitations
+- Card is **tap-only** (auto-dismiss removed) — ~46 taps per full pass by design.
+- The decade *theme/color* change is untouched; only the takeover trigger moved decade→year.
+- Facts are stable film history; 2024/2025 web-verified. Quote films auto-checked against dataset (45/45). Render + escaping tested across all 46 years.
+
 ## Session: Configuration System Implementation (Feb 2026)
 
 ### Overview
