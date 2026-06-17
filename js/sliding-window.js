@@ -19,6 +19,14 @@ const SlidingWindow = (function () {
     let notSeenSet = new Set();      // Fast lookup for not-seen items
     let history = [];                // Action history for undo
 
+    // ===== Decade filtering (v3.3) =====
+    // Only items whose era is in activeEras are shown. Switched-off decades
+    // are SKIPPED in every scan (exactly like already-rated items), so the
+    // canonical item order, saved currentIndex, and QR export are untouched.
+    let activeEras = new Set();      // era IDs currently being reviewed
+    let allEraIds = [];              // every era ID (the default selection)
+    let eraCounts = {};              // era ID -> true total count (from manifest)
+
     // Callbacks
     let onUpdate = null;
     let onComplete = null;
@@ -49,6 +57,17 @@ const SlidingWindow = (function () {
         // With chunked loading, items may still be arriving. totalExpected is
         // the manifest's true count; completion must never fire before then.
         totalExpected = (options && options.totalExpected) || itemList.length;
+        eraCounts = (options && options.eraCounts) || {};
+        allEraIds = (options && options.allEraIds && options.allEraIds.length)
+            ? options.allEraIds.slice()
+            : deriveAllEraIds();
+
+        // Decade selection: use the saved one, else default to every decade.
+        const savedSel = savedState.activeEras;
+        activeEras = new Set(
+            (Array.isArray(savedSel) && savedSel.length) ? savedSel : allEraIds
+        );
+
         currentIndex = savedState.currentIndex || 0;
         seenSet = new Set(savedState.seen || []);
         notSeenSet = new Set(savedState.notSeen || []);
@@ -57,12 +76,61 @@ const SlidingWindow = (function () {
         onUpdate = callbacks.onUpdate || (() => { });
         onComplete = callbacks.onComplete || (() => { });
 
-        // Skip already-rated items to find the real current position
-        while (currentIndex < items.length && isRated(getItemId(items[currentIndex]))) {
+        // Skip already-rated OR filtered-out items to find the real position
+        while (currentIndex < items.length && !isSelectable(items[currentIndex])) {
             currentIndex++;
         }
 
         triggerUpdate();
+    }
+
+    /**
+     * Default selection = every configured era (or a sensible fallback).
+     */
+    function deriveAllEraIds() {
+        if (typeof ConfigLoader !== 'undefined' && ConfigLoader.isInitialized) {
+            const groups = (ConfigLoader.get().eras.groups) || [];
+            if (groups.length) return groups.map(e => e.id);
+        }
+        return ['1980s', '1990s', '2000s', '2010s', '2020s'];
+    }
+
+    /**
+     * Era ID for an item (uses ItemManager when available, else year ranges).
+     */
+    function eraIdForItem(item) {
+        if (typeof ItemManager !== 'undefined' && ItemManager.isInitialized) {
+            return ItemManager.getEraId(item);
+        }
+        const year = item.year;
+        if (year < 1990) return '1980s';
+        if (year < 2000) return '1990s';
+        if (year < 2010) return '2000s';
+        if (year < 2020) return '2010s';
+        return '2020s';
+    }
+
+    /**
+     * Is the item in a currently-active decade?
+     */
+    function isActive(item) {
+        return activeEras.has(eraIdForItem(item));
+    }
+
+    /**
+     * Should this item be shown? (unrated AND in an active decade)
+     */
+    function isSelectable(item) {
+        return !isRated(getItemId(item)) && isActive(item);
+    }
+
+    /**
+     * Is every active decade selected? (the default, no-filter case)
+     */
+    function isAllSelected() {
+        return allEraIds.length > 0
+            && activeEras.size === allEraIds.length
+            && allEraIds.every(id => activeEras.has(id));
     }
 
     /**
@@ -93,10 +161,10 @@ const SlidingWindow = (function () {
         const windowItems = [];
         let idx = currentIndex;
 
-        // Collect unrated items for the window
+        // Collect unrated items in active decades for the window
         while (windowItems.length < WINDOW_SIZE && idx < items.length) {
             const item = items[idx];
-            if (!isRated(getItemId(item))) {
+            if (isSelectable(item)) {
                 windowItems.push({
                     ...item,
                     index: idx
@@ -119,7 +187,7 @@ const SlidingWindow = (function () {
 
         while (count < WINDOW_SIZE + PRELOAD_AHEAD && idx < items.length) {
             const item = items[idx];
-            if (!isRated(getItemId(item))) {
+            if (isSelectable(item)) {
                 queue.push(item);
                 count++;
             }
@@ -194,7 +262,7 @@ const SlidingWindow = (function () {
         let idx = currentIndex;
         while (idx < items.length) {
             const item = items[idx];
-            if (!isRated(getItemId(item))) {
+            if (isSelectable(item)) {
                 return { ...item, index: idx };
             }
             idx++;
@@ -213,15 +281,16 @@ const SlidingWindow = (function () {
     function advanceToNext() {
         currentIndex++;
 
-        // Skip any already-rated items
-        while (currentIndex < items.length && isRated(getItemId(items[currentIndex]))) {
+        // Skip any already-rated OR filtered-out items
+        while (currentIndex < items.length && !isSelectable(items[currentIndex])) {
             currentIndex++;
         }
 
         triggerUpdate();
 
-        // Check for completion — guard: never complete while chunks are still loading
-        if (!getCurrentItem() && allItemsLoaded()) {
+        // Check for completion — guard: never complete while chunks are still
+        // loading, and never when the selection is empty (that's an empty state).
+        if (activeEras.size > 0 && !getCurrentItem() && allItemsLoaded()) {
             onComplete(getState());
         }
     }
@@ -240,9 +309,40 @@ const SlidingWindow = (function () {
      */
     function notifyItemsAppended() {
         triggerUpdate();
-        if (!getCurrentItem() && allItemsLoaded()) {
+        if (activeEras.size > 0 && !getCurrentItem() && allItemsLoaded()) {
             onComplete(getState());
         }
+    }
+
+    /**
+     * Change which decades are under review (v3.3).
+     * Rewinds to the EARLIEST unrated item in the new selection so decades you
+     * had already scrolled past chronologically are picked up again.
+     * @param {Array} eraIds
+     */
+    function setActiveEras(eraIds) {
+        activeEras = new Set(eraIds || []);
+
+        // Rewind: find the earliest unrated, active item from the very start.
+        currentIndex = 0;
+        while (currentIndex < items.length && !isSelectable(items[currentIndex])) {
+            currentIndex++;
+        }
+
+        triggerUpdate();
+
+        // Selection may now be fully reviewed (but never "complete" when empty).
+        if (activeEras.size > 0 && !getCurrentItem() && allItemsLoaded()) {
+            onComplete(getState());
+        }
+    }
+
+    /**
+     * The decades currently under review.
+     * @returns {Array} era IDs
+     */
+    function getActiveEras() {
+        return Array.from(activeEras);
     }
 
     /**
@@ -263,7 +363,8 @@ const SlidingWindow = (function () {
             currentIndex,
             seen: Array.from(seenSet),
             notSeen: Array.from(notSeenSet),
-            history: history.slice() // Copy
+            history: history.slice(), // Copy
+            activeEras: Array.from(activeEras) // v3.3: remember decade selection
         };
     }
 
@@ -305,16 +406,58 @@ const SlidingWindow = (function () {
      * @returns {Object}
      */
     function getProgress() {
-        const total = seenSet.size + notSeenSet.size;
-        // Use the manifest total, not items.length — items may still be loading
-        const grandTotal = totalExpected || items.length;
+        // ----- Global (lifetime, every decade) -----
+        const globalSeen = seenSet.size;
+        const globalNotSeen = notSeenSet.size;
+        const globalRated = globalSeen + globalNotSeen;
+        const globalTotal = totalExpected || items.length;
+
+        // ----- Scoped to the active decades (drives the HUD) -----
+        let scopedSeen, scopedNotSeen, scopedTotal;
+
+        if (isAllSelected()) {
+            // No filter: identical to lifetime totals (and avoids a transient
+            // undercount while later chunks are still streaming in).
+            scopedSeen = globalSeen;
+            scopedNotSeen = globalNotSeen;
+            scopedTotal = globalTotal;
+        } else {
+            // Denominator from the manifest (exact, even mid-load)
+            scopedTotal = 0;
+            if (eraCounts && Object.keys(eraCounts).length) {
+                activeEras.forEach(id => { scopedTotal += (eraCounts[id] || 0); });
+            }
+            // Numerators from loaded items (rated items are always loaded)
+            scopedSeen = 0;
+            scopedNotSeen = 0;
+            for (const m of items) {
+                if (!isActive(m)) continue;
+                const id = getItemId(m);
+                if (seenSet.has(id)) scopedSeen++;
+                else if (notSeenSet.has(id)) scopedNotSeen++;
+            }
+            if (!scopedTotal) {
+                // Fallback if manifest counts weren't supplied
+                for (const m of items) if (isActive(m)) scopedTotal++;
+            }
+        }
+
+        const scopedRated = scopedSeen + scopedNotSeen;
+
         return {
-            current: total,
-            total: grandTotal,
-            percent: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
-            seen: seenSet.size,
-            notSeen: notSeenSet.size,
-            remaining: grandTotal - total
+            // Scoped (HUD counter, progress bar, action-bar tallies)
+            current: scopedRated,
+            total: scopedTotal,
+            percent: scopedTotal > 0 ? (scopedRated / scopedTotal) * 100 : 0,
+            seen: scopedSeen,
+            notSeen: scopedNotSeen,
+            remaining: Math.max(0, scopedTotal - scopedRated),
+            // Global (settings, gamification, backup reminders)
+            globalSeen,
+            globalNotSeen,
+            globalRated,
+            globalTotal,
+            globalRemaining: Math.max(0, globalTotal - globalRated)
         };
     }
 
@@ -343,7 +486,19 @@ const SlidingWindow = (function () {
         seenSet.clear();
         notSeenSet.clear();
         history = [];
+        // Back to the default: every decade selected
+        activeEras = new Set(allEraIds);
         triggerUpdate();
+    }
+
+    /**
+     * Has EVERY item (all decades) been rated? Distinct from the filter-aware
+     * isComplete(), which only checks the active selection.
+     * @returns {boolean}
+     */
+    function isAllComplete() {
+        return (seenSet.size + notSeenSet.size) >= (totalExpected || items.length)
+            && allItemsLoaded();
     }
 
     /**
@@ -370,6 +525,9 @@ const SlidingWindow = (function () {
         getProgress,
         getCurrentEra,
         getCurrentDecade, // Alias for backwards compatibility
+        setActiveEras,    // v3.3: change decade selection
+        getActiveEras,    // v3.3
+        isAllComplete,    // v3.3: every decade fully rated
         reset,
         isComplete,
         get historyLength() { return history.length; }

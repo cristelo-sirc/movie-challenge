@@ -59,7 +59,28 @@
         shareSMS: document.getElementById('shareSMS'),
         shareDownload: document.getElementById('shareDownload'),
         shareLink: document.getElementById('shareLink'),
-        backupBtn: document.getElementById('backupBtn')
+        backupBtn: document.getElementById('backupBtn'),
+        // V3.3 — decade selection + stats
+        decadeBadgeLabel: document.getElementById('decadeBadgeLabel'),
+        statsBtn: document.getElementById('statsBtn'),
+        decadeOverlay: document.getElementById('decadeOverlay'),
+        closeDecadeBtn: document.getElementById('closeDecadeBtn'),
+        decadeList: document.getElementById('decadeList'),
+        decadeAllBtn: document.getElementById('decadeAllBtn'),
+        decadeNoneBtn: document.getElementById('decadeNoneBtn'),
+        decadeDoneBtn: document.getElementById('decadeDoneBtn'),
+        statsOverlay: document.getElementById('statsOverlay'),
+        closeStatsBtn: document.getElementById('closeStatsBtn'),
+        statsTotalSeen: document.getElementById('statsTotalSeen'),
+        statsTotalRated: document.getElementById('statsTotalRated'),
+        statsPctSeen: document.getElementById('statsPctSeen'),
+        statsPctLabel: document.getElementById('statsPctLabel'),
+        statsByDecade: document.getElementById('statsByDecade'),
+        statsTopYears: document.getElementById('statsTopYears'),
+        statsYearsEmpty: document.getElementById('statsYearsEmpty'),
+        emptySelectionState: document.getElementById('emptySelectionState'),
+        emptyChooseBtn: document.getElementById('emptyChooseBtn'),
+        chooseDecadesBtn: document.getElementById('chooseDecadesBtn')
     };
 
     // Touch/Drag State
@@ -93,6 +114,18 @@
     // ===== Year transition card state (v3.2) =====
     let currentYear = null;            // year of the top card we last reacted to
     const shownYears = new Set();      // years whose card has already been shown this session
+
+    // ===== Decade selection state (v3.3) =====
+    let eraCountsApp = {};             // era ID -> true total (from manifest)
+    let allEraIdsApp = [];             // every era ID (default selection)
+    let pendingSelection = new Set();  // working selection while the picker is open
+    let suppressYearCardOnce = false;  // skip the year takeover on the next render
+                                       // (used right after a selection change)
+
+    // Small inline icons for the picker toggles
+    const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    const ICON_CIRCLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle></svg>';
+    const ICON_FILM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>';
 
     /**
      * Vibration feedback (Android etc.; iPhones ignore the API)
@@ -241,12 +274,25 @@
             // Get items from ItemManager
             const items = ItemManager.getAll();
 
+            // Per-decade totals from the manifest (exact, even mid-load) and the
+            // full list of era IDs — both feed the decade filter (v3.3).
+            const manifest = DataLoader.manifest;
+            eraCountsApp = {};
+            if (manifest && manifest.chunks) {
+                manifest.chunks.forEach(c => { eraCountsApp[c.id] = c.count; });
+            }
+            allEraIdsApp = (config.eras.groups || []).map(e => e.id);
+
             // Initialize the sliding window (totalExpected guards completion
             // and progress math while chunks are still arriving)
             SlidingWindow.init(items, savedState, {
                 onUpdate: handleUpdate,
                 onComplete: handleComplete
-            }, { totalExpected: DataLoader.totalExpected });
+            }, {
+                totalExpected: DataLoader.totalExpected,
+                eraCounts: eraCountsApp,
+                allEraIds: allEraIdsApp
+            });
 
             // Set up event listeners
             setupEventListeners();
@@ -358,28 +404,45 @@
      * @param {Object} data - Update data
      */
     function handleUpdate(data) {
-        // Update progress bar
+        // Update progress bar (scoped to the selected decades)
         elements.progressBar.style.width = `${data.progress.percent}%`;
 
         // Update counter with animation
         animateCounter(data.progress.current);
 
-        // Update decade badge
-        elements.decadeBadge.textContent = data.decade;
+        // Update decade badge label (keeps the caret intact)
+        if (elements.decadeBadgeLabel) {
+            elements.decadeBadgeLabel.textContent = data.decade;
+        }
 
         // Update undo button state
         elements.undoBtn.disabled = !data.canUndo;
 
-        // Update action bar counters (seen/not seen tally)
+        // Update action bar counters (seen/not seen tally — scoped)
         elements.seenCounter.textContent = data.progress.seen.toLocaleString();
         elements.notSeenCounter.textContent = data.progress.notSeen.toLocaleString();
 
         // Render cards
         renderCards(data.window);
 
+        // Is the user reviewing nothing because no decade is selected?
+        const noSelection = SlidingWindow.getActiveEras().length === 0;
+        if (elements.emptySelectionState) {
+            elements.emptySelectionState.classList.toggle('hidden', !noSelection);
+        }
+
+        // When there ARE cards to show, make sure we're out of any completion
+        // state (e.g. after the user re-enables a decade) and buttons are live.
+        if (data.window.length > 0) {
+            elements.completionState.classList.add('hidden');
+            elements.seenBtn.disabled = false;
+            elements.skipBtn.disabled = false;
+        }
+
         // If the user caught up to the loaded edge while chunks are still
-        // downloading, show a brief loading state instead of an empty stack
-        if (data.window.length === 0 && !SlidingWindow.isComplete()) {
+        // downloading, show a brief loading state instead of an empty stack.
+        // (Not when the stack is empty simply because no decade is selected.)
+        if (data.window.length === 0 && !noSelection && !SlidingWindow.isComplete()) {
             const loadingText = elements.loadingState.querySelector('p');
             if (loadingText) loadingText.textContent = 'Loading more movies...';
             elements.loadingState.classList.remove('hidden');
@@ -390,7 +453,7 @@
         // Preload images
         preloadImages(data.preload);
 
-        // Save state
+        // Save state (now includes the decade selection)
         StorageManager.save(data.state);
 
         // Update background (desktop)
@@ -406,19 +469,26 @@
             // Year transition card (v3.2): show when we advance into a new year.
             const year = parseInt(eraValue, 10);
             if (!Number.isNaN(year)) {
-                // Don't fire on the very first render (fresh load or resume);
-                // only on an actual forward transition we haven't shown yet.
-                if (currentYear !== null && year > currentYear && !shownYears.has(year)) {
+                if (suppressYearCardOnce) {
+                    // A selection change just rewound us — adopt the new year
+                    // silently so we don't fire a takeover on the jump.
+                    suppressYearCardOnce = false;
+                    currentYear = year;
+                } else if (currentYear !== null && year > currentYear && !shownYears.has(year)) {
+                    // Don't fire on the very first render (fresh load or resume);
+                    // only on an actual forward transition we haven't shown yet.
                     shownYears.add(year);
                     AudioManager.playDecadeTransition();
                     showYearCard(year);
+                    currentYear = year;
+                } else {
+                    currentYear = year;
                 }
-                currentYear = year;
             }
         }
 
-        // Check for 100-movie backup reminder (mobile only)
-        checkBackupReminder(data.progress.seen + data.progress.notSeen);
+        // Check for backup reminder (mobile only) — based on lifetime ratings
+        checkBackupReminder(data.progress.globalRated);
     }
 
     /**
@@ -545,20 +615,40 @@
      * @param {Object} state - Final state
      */
     function handleComplete(state) {
+        const allDone = SlidingWindow.isAllComplete();
         elements.cardStack.innerHTML = '';
+        if (elements.emptySelectionState) elements.emptySelectionState.classList.add('hidden');
         elements.completionState.classList.remove('hidden');
 
-        const stats = StorageManager.getStats(state);
-        const totalCount = config.data.totalCount.toLocaleString();
         const itemTypePlural = config.itemTypePlural || 'movies';
         const positiveLabel = config.actions.positive.pastTense || 'seen';
         const negativeLabel = config.actions.negative.pastTense || 'not seen';
+        const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+        const h2 = elements.completionState.querySelector('h2');
 
-        elements.completionStats.innerHTML = `
-            You've rated all <strong>${totalCount}</strong> ${itemTypePlural}!<br>
-            ${positiveLabel.charAt(0).toUpperCase() + positiveLabel.slice(1)}: <span style="color: var(--accent-seen)">${stats.seenCount}</span> |
-            ${negativeLabel.charAt(0).toUpperCase() + negativeLabel.slice(1)}: <span style="color: var(--accent-skip)">${stats.notSeenCount}</span>
-        `;
+        if (allDone) {
+            // Whole challenge finished — every decade rated
+            const stats = StorageManager.getStats(state);
+            if (h2) h2.textContent = 'Challenge Complete!';
+            elements.completionStats.innerHTML = `
+                You've rated all <strong>${config.data.totalCount.toLocaleString()}</strong> ${itemTypePlural}!<br>
+                ${cap(positiveLabel)}: <span style="color: var(--accent-seen)">${stats.seenCount.toLocaleString()}</span> |
+                ${cap(negativeLabel)}: <span style="color: var(--accent-skip)">${stats.notSeenCount.toLocaleString()}</span>
+            `;
+            if (elements.chooseDecadesBtn) elements.chooseDecadesBtn.classList.add('hidden');
+        } else {
+            // Only the selected decades are finished — invite to add more
+            const prog = SlidingWindow.getProgress();
+            const label = formatDecadeList(SlidingWindow.getActiveEras());
+            if (h2) h2.textContent = 'Decades complete!';
+            elements.completionStats.innerHTML = `
+                You've reviewed every movie in ${label}.<br>
+                ${cap(positiveLabel)}: <span style="color: var(--accent-seen)">${prog.seen.toLocaleString()}</span> |
+                ${cap(negativeLabel)}: <span style="color: var(--accent-skip)">${prog.notSeen.toLocaleString()}</span><br>
+                Add more decades to keep going.
+            `;
+            if (elements.chooseDecadesBtn) elements.chooseDecadesBtn.classList.remove('hidden');
+        }
 
         // Disable action buttons
         elements.seenBtn.disabled = true;
@@ -896,9 +986,10 @@
             GamificationManager.recordUndo(wasSeen);
             hideStreakDisplay();
             SlidingWindow.undo();
-            // Re-sync seen count from authoritative source
+            // Re-sync seen count from authoritative source (lifetime total,
+            // so ranks/milestones never depend on the active decade filter)
             const progress = SlidingWindow.getProgress();
-            GamificationManager.syncSeenCount(progress.seen);
+            GamificationManager.syncSeenCount(progress.globalSeen);
         });
 
         elements.resetBtn.addEventListener('click', handleReset);
@@ -963,6 +1054,56 @@
             elements.backupModal.querySelector('.modal-overlay')?.addEventListener('click', closeBackupModal);
         }
 
+        // ===== Decade picker (v3.3) =====
+        if (elements.decadeBadge) {
+            elements.decadeBadge.addEventListener('click', openDecadePicker);
+        }
+        if (elements.closeDecadeBtn) {
+            elements.closeDecadeBtn.addEventListener('click', closeAndApplyDecadePicker);
+        }
+        if (elements.decadeDoneBtn) {
+            elements.decadeDoneBtn.addEventListener('click', closeAndApplyDecadePicker);
+        }
+        if (elements.decadeOverlay) {
+            elements.decadeOverlay.addEventListener('click', (e) => {
+                if (e.target === elements.decadeOverlay) closeAndApplyDecadePicker();
+            });
+        }
+        if (elements.decadeAllBtn) {
+            elements.decadeAllBtn.addEventListener('click', () => {
+                pendingSelection = new Set(allEraIdsApp);
+                buildDecadeRows();
+            });
+        }
+        if (elements.decadeNoneBtn) {
+            elements.decadeNoneBtn.addEventListener('click', () => {
+                pendingSelection = new Set();
+                buildDecadeRows();
+            });
+        }
+
+        // ===== Stats screen (v3.3) =====
+        if (elements.statsBtn) {
+            elements.statsBtn.addEventListener('click', () => {
+                elements.statsBtn.classList.remove('hint');
+                openStatsScreen();
+            });
+        }
+        if (elements.closeStatsBtn) {
+            elements.closeStatsBtn.addEventListener('click', closeStatsScreen);
+        }
+        if (elements.statsOverlay) {
+            elements.statsOverlay.addEventListener('click', (e) => {
+                if (e.target === elements.statsOverlay) closeStatsScreen();
+            });
+        }
+        if (elements.emptyChooseBtn) {
+            elements.emptyChooseBtn.addEventListener('click', openDecadePicker);
+        }
+        if (elements.chooseDecadesBtn) {
+            elements.chooseDecadesBtn.addEventListener('click', openDecadePicker);
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', handleKeyboard);
     }
@@ -998,10 +1139,12 @@
     }
 
     function updateModalStats() {
+        // Settings shows lifetime totals (all decades); the HUD shows the
+        // scoped selection, and the Stats screen shows the full breakdown.
         const progress = SlidingWindow.getProgress();
-        elements.statSeen.textContent = progress.seen.toLocaleString();
-        elements.statSkipped.textContent = progress.notSeen.toLocaleString();
-        elements.statRemaining.textContent = progress.remaining.toLocaleString();
+        elements.statSeen.textContent = progress.globalSeen.toLocaleString();
+        elements.statSkipped.textContent = progress.globalNotSeen.toLocaleString();
+        elements.statRemaining.textContent = progress.globalRemaining.toLocaleString();
     }
 
     // ===== EXPORT/IMPORT FUNCTIONS =====
@@ -1057,13 +1200,19 @@
             return;
         }
 
+        // Keep the user's current decade selection across an import
+        newState.activeEras = SlidingWindow.getActiveEras();
         StorageManager.save(newState);
 
         // Reinitialize the sliding window
         SlidingWindow.init(ItemManager.getAll(), newState, {
             onUpdate: handleUpdate,
             onComplete: handleComplete
-        }, { totalExpected: DataLoader.totalExpected });
+        }, {
+            totalExpected: DataLoader.totalExpected,
+            eraCounts: eraCountsApp,
+            allEraIds: allEraIdsApp
+        });
 
         // Re-sync gamification manager with imported seen count
         GamificationManager.init(newState.seen.length, 0);
@@ -1382,6 +1531,176 @@ ${baseUrl}`;
         document.body.removeChild(textarea);
     }
 
+    // ===== DECADE PICKER (v3.3) =====
+
+    function openDecadePicker() {
+        pendingSelection = new Set(SlidingWindow.getActiveEras());
+        buildDecadeRows();
+        elements.decadeOverlay.classList.remove('hidden');
+    }
+
+    function buildDecadeRows() {
+        const eras = config.eras.groups || [];
+        const state = SlidingWindow.getState();
+        const seenSet = new Set(state.seen);
+        const notSeenSet = new Set(state.notSeen);
+        const rows = StatsEngine.statsByEra(ItemManager.getAll(), seenSet, notSeenSet, eras);
+        const byId = {};
+        rows.forEach(r => { byId[r.id] = r; });
+
+        elements.decadeList.innerHTML = eras.map(e => {
+            const r = byId[e.id] || { rated: 0, total: 0 };
+            const total = (eraCountsApp[e.id] != null) ? eraCountsApp[e.id] : (r.total || 0);
+            const on = pendingSelection.has(e.id);
+            return `
+                <button class="decade-row ${on ? 'on' : ''}" data-era="${e.id}" role="switch" aria-checked="${on}">
+                    <span class="decade-row-check">${on ? ICON_CHECK : ICON_CIRCLE}</span>
+                    <span class="decade-row-name">${escapeHtml(e.name)}</span>
+                    <span class="decade-row-tally">${r.rated.toLocaleString()} / ${total.toLocaleString()}</span>
+                </button>`;
+        }).join('');
+
+        elements.decadeList.querySelectorAll('.decade-row').forEach(btn => {
+            btn.addEventListener('click', () => toggleDecadeRow(btn.dataset.era, btn));
+        });
+    }
+
+    function toggleDecadeRow(id, btn) {
+        const on = !pendingSelection.has(id);
+        if (on) pendingSelection.add(id); else pendingSelection.delete(id);
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-checked', String(on));
+        const check = btn.querySelector('.decade-row-check');
+        if (check) check.innerHTML = on ? ICON_CHECK : ICON_CIRCLE;
+    }
+
+    function closeAndApplyDecadePicker() {
+        elements.decadeOverlay.classList.add('hidden');
+        applyDecadeSelection();
+    }
+
+    function applyDecadeSelection() {
+        const before = SlidingWindow.getActiveEras().slice().sort().join(',');
+        const after = Array.from(pendingSelection).sort().join(',');
+        if (before === after) return; // nothing changed — no jump, no notice
+
+        suppressYearCardOnce = true;
+        SlidingWindow.setActiveEras(Array.from(pendingSelection));
+        StorageManager.save(SlidingWindow.getState());
+
+        const active = SlidingWindow.getActiveEras();
+        if (active.length === 0) {
+            showFilterNotice('No decades selected — tap the badge to choose', 'empty');
+            return;
+        }
+        const prog = SlidingWindow.getProgress();
+        if (prog.remaining <= 0) {
+            showFilterNotice('Nothing left in your selection — add more decades', 'empty');
+        } else {
+            const current = SlidingWindow.getCurrentEra();
+            showFilterNotice(`Showing ${current} — ${prog.remaining.toLocaleString()} left to review`);
+        }
+    }
+
+    /**
+     * Prominent, hard-to-miss notice for selection changes / rewinds.
+     * Top-center, accent border, ~4.5s, tap to dismiss.
+     */
+    function showFilterNotice(message, kind) {
+        const existing = document.querySelector('.filter-notice');
+        if (existing) existing.remove();
+
+        const el = document.createElement('div');
+        el.className = 'filter-notice' + (kind === 'empty' ? ' is-empty' : '');
+        el.innerHTML = `<span class="filter-notice-icon">${ICON_FILM}</span><span class="filter-notice-text">${escapeHtml(message)}</span>`;
+        document.body.appendChild(el);
+        vibrate(20);
+
+        const dismiss = () => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 400);
+        };
+        el.addEventListener('click', dismiss);
+        setTimeout(() => { if (el.parentNode) dismiss(); }, 4500);
+    }
+
+    /**
+     * Human-readable decade list: "the 1980s", "the 1980s & 1990s", etc.
+     */
+    function formatDecadeList(eraIds) {
+        const all = config.eras.groups || [];
+        const names = all.filter(e => eraIds.includes(e.id)).map(e => e.name);
+        if (names.length === 0) return 'your selection';
+        if (names.length === all.length) return 'every decade';
+        if (names.length === 1) return `the ${names[0]}`;
+        const last = names.pop();
+        return `the ${names.join(', ')} & ${last}`;
+    }
+
+    // ===== STATS SCREEN (v3.3) =====
+
+    function openStatsScreen() {
+        if (requiresFullData()) return; // needs the full dataset for accurate totals
+        renderStats();
+        elements.statsOverlay.classList.remove('hidden');
+    }
+
+    function closeStatsScreen() {
+        elements.statsOverlay.classList.add('hidden');
+    }
+
+    function renderStats() {
+        const state = SlidingWindow.getState();
+        const seenSet = new Set(state.seen);
+        const notSeenSet = new Set(state.notSeen);
+        const items = ItemManager.getAll();
+        const eras = config.eras.groups || [];
+        const total = config.data.totalCount;
+        const seenCount = state.seen.length;
+        const ratedCount = state.seen.length + state.notSeen.length;
+
+        // Overview cards
+        elements.statsTotalSeen.textContent = seenCount.toLocaleString();
+        elements.statsTotalRated.textContent = ratedCount.toLocaleString();
+        elements.statsPctSeen.textContent = (total > 0 ? Math.round((seenCount / total) * 100) : 0) + '%';
+        if (elements.statsPctLabel) {
+            elements.statsPctLabel.textContent = 'Of ' + total.toLocaleString();
+        }
+
+        // Seen by decade (bars scaled to the busiest decade)
+        const rows = StatsEngine.statsByEra(items, seenSet, notSeenSet, eras);
+        const maxDecade = Math.max(1, ...rows.map(r => r.seen));
+        elements.statsByDecade.innerHTML = rows.map(r =>
+            statBarRow(null, r.name, r.seen, r.seen / maxDecade, false)
+        ).join('');
+
+        // Most-watched years
+        const years = StatsEngine.rankYears(items, seenSet, 8);
+        if (years.length === 0) {
+            elements.statsTopYears.innerHTML = '';
+            elements.statsYearsEmpty.classList.remove('hidden');
+        } else {
+            elements.statsYearsEmpty.classList.add('hidden');
+            const maxYear = Math.max(1, ...years.map(y => y.seen));
+            elements.statsTopYears.innerHTML = years.map((y, i) =>
+                statBarRow(i + 1, String(y.year), y.seen, y.seen / maxYear, true)
+            ).join('');
+        }
+    }
+
+    function statBarRow(rank, label, value, ratio, isYear) {
+        const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+        const rankHtml = rank != null ? `<span class="stat-bar-rank">${rank}</span>` : '';
+        const labelClass = 'stat-bar-label' + (isYear ? ' year' : '');
+        return `
+            <div class="stat-bar-row">
+                ${rankHtml}
+                <span class="${labelClass}">${escapeHtml(label)}</span>
+                <span class="stat-bar-track"><span class="stat-bar-fill" style="width:${pct}%"></span></span>
+                <span class="stat-bar-value">${value.toLocaleString()}</span>
+            </div>`;
+    }
+
     // ===== TOAST NOTIFICATION =====
 
     function showToast(message, type = '') {
@@ -1422,10 +1741,20 @@ ${baseUrl}`;
             return;
         }
 
-        // Close modal on Escape
-        if (e.key === 'Escape' && !elements.modalOverlay.classList.contains('hidden')) {
-            closeModal();
-            return;
+        // Close overlays on Escape (decade picker applies its selection)
+        if (e.key === 'Escape') {
+            if (elements.decadeOverlay && !elements.decadeOverlay.classList.contains('hidden')) {
+                closeAndApplyDecadePicker();
+                return;
+            }
+            if (elements.statsOverlay && !elements.statsOverlay.classList.contains('hidden')) {
+                closeStatsScreen();
+                return;
+            }
+            if (!elements.modalOverlay.classList.contains('hidden')) {
+                closeModal();
+                return;
+            }
         }
 
         switch (e.key) {

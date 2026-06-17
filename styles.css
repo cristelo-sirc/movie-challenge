@@ -1930,3 +1930,332 @@ body::after {
         pointer-events: none;
     }
 }
+
+/* ============================================================
+   v3.3 — Decade selection, Stats screen, prominent notice
+   ============================================================ */
+
+/* ----- Decade badge as a button ----- */
+.decade-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.decade-badge:hover {
+    background: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+}
+
+.decade-caret {
+    width: 12px;
+    height: 12px;
+    opacity: 0.85;
+}
+
+/* ----- Stats button (left cluster, accent so it stands out) ----- */
+.stats-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: var(--space-md);
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--theme-primary);
+    background: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-primary) 45%, transparent);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+.stats-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.stats-btn:hover {
+    background: color-mix(in srgb, var(--theme-primary) 24%, transparent);
+    transform: translateY(-1px);
+}
+
+.stats-btn:active {
+    transform: scale(0.97);
+}
+
+/* One-time attention pulse so users find where stats live */
+.stats-btn.hint {
+    animation: statsPulse 1.6s var(--ease-out-expo) 4;
+}
+
+@keyframes statsPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+
+    50% {
+        box-shadow: 0 0 0 7px color-mix(in srgb, var(--theme-primary) 22%, transparent);
+    }
+}
+
+/* ----- Decade picker ----- */
+.decade-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.decade-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.decade-row:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.decade-row.on {
+    background: color-mix(in srgb, var(--theme-primary) 16%, var(--bg-elevated));
+    border-color: color-mix(in srgb, var(--theme-primary) 55%, transparent);
+    color: var(--text-primary);
+}
+
+.decade-row-check {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    color: var(--text-muted);
+}
+
+.decade-row.on .decade-row-check {
+    color: var(--theme-primary);
+}
+
+.decade-row-check svg {
+    width: 22px;
+    height: 22px;
+}
+
+.decade-row-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.decade-row-tally {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.decade-row.on .decade-row-tally {
+    color: color-mix(in srgb, var(--theme-primary) 80%, white);
+}
+
+.decade-picker-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.decade-picker-actions .btn {
+    flex: 1;
+}
+
+/* ----- Stats screen bars ----- */
+.stats-modal {
+    max-width: 440px;
+}
+
+.stat-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat-bar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.875rem;
+}
+
+.stat-bar-rank {
+    flex-shrink: 0;
+    width: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stat-bar-label {
+    flex-shrink: 0;
+    width: 52px;
+    color: var(--text-secondary);
+}
+
+.stat-bar-label.year {
+    width: 42px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-bar-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 100px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+}
+
+.stat-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+    transition: width 0.5s var(--ease-out-expo);
+}
+
+.stat-bar-value {
+    flex-shrink: 0;
+    width: 40px;
+    text-align: right;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+/* ----- Empty selection state ----- */
+.empty-selection {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+}
+
+.empty-selection.hidden {
+    display: none;
+}
+
+.empty-selection h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.empty-selection p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* ----- Prominent filter notice (rewind / selection change) ----- */
+.filter-notice {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: calc(100vw - 32px);
+    background: var(--bg-surface);
+    border: 1.5px solid var(--theme-primary);
+    color: var(--text-primary);
+    padding: 12px 18px;
+    border-radius: 100px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 24px var(--theme-card-glow);
+    z-index: 600;
+    cursor: pointer;
+    animation: filterNoticeIn 0.4s var(--ease-out-back);
+}
+
+.filter-notice-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--theme-primary);
+}
+
+.filter-notice-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.filter-notice.is-empty {
+    border-color: var(--accent-skip);
+}
+
+.filter-notice.is-empty .filter-notice-icon {
+    color: var(--accent-skip);
+}
+
+.filter-notice.fade-out {
+    animation: filterNoticeOut 0.4s ease forwards;
+}
+
+@keyframes filterNoticeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@keyframes filterNoticeOut {
+    to {
+        opacity: 0;
+        transform: translate(-50%, -16px);
+    }
+}
+
+/* ----- Tighten the HUD on small screens to fit the new button ----- */
+@media (max-width: 600px) {
+    .hud {
+        padding-left: var(--space-md);
+        padding-right: var(--space-md);
+    }
+
+    .hud-left,
+    .hud-right {
+        gap: var(--space-sm);
+    }
+
+    .stats-btn-label {
+        display: none;
+    }
+
+    .stats-btn {
+        margin-left: var(--space-sm);
+        padding: 8px;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+}

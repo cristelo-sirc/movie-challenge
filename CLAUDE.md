@@ -2,6 +2,66 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Decade Selection + Stats Screen (Jun 2026) — v3.3.0
+
+### Overview
+Added a per-decade review filter, a per-decade tally, and a most-watched-years
+ranking. Users tap the header decade badge to open a picker and turn each decade
+on/off (1 to all). The card stream, counter, and progress bar are scoped to the
+selected decades; a new dedicated Stats screen shows the full lifetime breakdown.
+
+### How it works (key design decision)
+The canonical movie list, saved `currentIndex`, and the QR/share bit-array are
+**untouched**. Switched-off decades are *skipped* in every scan, exactly like
+already-rated items. The decade selection is a personal view setting persisted in
+localStorage only — it is **never** baked into share codes (verified: codes
+round-trip identically and remain filter-agnostic; legacy v1 codes still import).
+
+**Chronological re-add:** changing the selection rewinds to the *earliest unrated
+item in the new selection*, so a decade you'd already scrolled past is picked up
+again. A prominent top-center notice ("Showing 1980s — N left to review") fires on
+every selection change so the jump is never a surprise. The year takeover card is
+suppressed on the rewinding render.
+
+**Scoped vs global:** HUD counter / progress bar / action-bar tallies are scoped
+to the selection. Ranks, streaks, milestones, backup reminders, and the Settings
+"Your Progress" totals stay **global** (lifetime) so filtering never costs rank.
+Two completion states: "Decades complete!" (selection done, offers "Choose
+Decades") vs the full "Challenge Complete!" (every movie rated).
+
+### Files
+| File | Change |
+|------|--------|
+| `js/stats-engine.js` | **+** `statsByEra()` (seen/notSeen/total/pct per decade) and `rankYears()` (most-watched years, desc). Pure + unit-tested. |
+| `js/sliding-window.js` | Active-era skip logic (`isActive`/`isSelectable`); `setActiveEras()` with rewind-to-earliest; `getActiveEras()`; `isAllComplete()`; scoped **and** global fields in `getProgress()`; `activeEras` added to `getState()`; reset restores all decades. |
+| `js/storage.js` | `activeEras` added to `defaultState` (null = all). Export/import paths unchanged. |
+| `js/app.js` | Decade picker (open/build/toggle/apply), prominent `showFilterNotice()`, dedicated Stats screen render, scoped HUD vs global gamification, empty-selection + dual completion states, year-card suppression on filter change, manifest-derived `eraCounts`/`allEraIds`, keyboard Esc for new overlays. |
+| `index.html` | Decade badge → button (label + caret); labeled **Stats** button (left cluster, accent + one-time pulse); decade picker overlay; Stats screen overlay; empty-selection state; "Choose Decades" completion button. Cache-bust `v=28`→`v=29`. |
+| `styles.css` | Badge-as-button, accent Stats button + pulse hint, picker rows/toggles, stat bars, empty state, prominent `.filter-notice` banner, mobile HUD tightening (≤600px). |
+
+### Validation
+- **Node unit tests (28):** statsByEra/rankYears math; filtering, rewind, the
+  chronological re-add case, scoped vs global progress, empty selection,
+  isComplete vs isAllComplete.
+- **JSDOM full-page boot (26):** real boot renders cards; picker opens with 5
+  tallied rows; filter to 2020s (notice + scoped reset + stream switch); re-add
+  1980s rewinds into the '80s; Stats screen renders; None → empty state.
+- **Completion states (10):** "Decades complete!" + Choose Decades, resume on
+  re-add, full "Challenge Complete!".
+- **Share-code round-trip (6):** seen/notSeen/currentIndex round-trip; codes
+  filter-agnostic; legacy v1 import intact.
+- All `node --check` syntax checks pass; with all five decades on, behavior is
+  identical to v3.2.0.
+
+### Notes / Limitations
+- Stats screen requires the full dataset (gated, like backup/share); the picker
+  works mid-load (totals from manifest, rated counts may lag a beat while later
+  chunks stream in, then self-correct).
+- Chunk JSON is unchanged, so `DataLoader.ASSET_VERSION` stays `27`; only the app
+  asset cache-bust (`?v=`) was bumped to `29`.
+- Visual/touch polish (exact spacing on very small phones, animation feel) is best
+  confirmed in a real browser; logic and DOM wiring are covered by the tests above.
+
 ## Session: Yearly Transition Card (Jun 2026) — v3.2.0
 
 ### Overview

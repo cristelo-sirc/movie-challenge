@@ -167,9 +167,68 @@ const StatsEngine = (function () {
         return pick;
     }
 
+    /**
+     * Per-era tally for the Stats screen and decade picker.
+     * @param {Array} items - full item array
+     * @param {Set} seenSet - Set of seen IDs
+     * @param {Set} notSeenSet - Set of not-seen IDs
+     * @param {Array} eras - config era groups [{id, name, min, max}]
+     * @returns {Array} [{ id, name, seen, notSeen, rated, total, pct }]
+     *   pct = seen / total as a 0-100 integer.
+     */
+    function statsByEra(items, seenSet, notSeenSet, eras) {
+        const rows = {};
+        eras.forEach(e => {
+            rows[e.id] = { id: e.id, name: e.name || e.id, seen: 0, notSeen: 0, total: 0 };
+        });
+        for (const m of items) {
+            const era = eras.find(e => m.year >= e.min && m.year <= e.max);
+            if (!era) continue;
+            const r = rows[era.id];
+            r.total++;
+            if (seenSet.has(m.id)) r.seen++;
+            else if (notSeenSet.has(m.id)) r.notSeen++;
+        }
+        return eras.map(e => {
+            const r = rows[e.id];
+            return {
+                id: r.id,
+                name: r.name,
+                seen: r.seen,
+                notSeen: r.notSeen,
+                rated: r.seen + r.notSeen,
+                total: r.total,
+                pct: r.total > 0 ? Math.round((r.seen / r.total) * 100) : 0,
+            };
+        });
+    }
+
+    /**
+     * Rank years by number of SEEN movies, highest first.
+     * Ties broken by year ascending. Years with zero seen are omitted.
+     * @param {Array} items - full item array
+     * @param {Set} seenSet - Set of seen IDs
+     * @param {number} limit - max rows to return (0 or falsy = all)
+     * @returns {Array} [{ year, seen }]
+     */
+    function rankYears(items, seenSet, limit) {
+        const counts = new Map();
+        for (const m of items) {
+            if (seenSet.has(m.id)) {
+                counts.set(m.year, (counts.get(m.year) || 0) + 1);
+            }
+        }
+        const arr = [];
+        counts.forEach((seen, year) => arr.push({ year, seen }));
+        arr.sort((a, b) => (b.seen - a.seen) || (a.year - b.year));
+        return (limit && limit > 0) ? arr.slice(0, limit) : arr;
+    }
+
     // Public API
     return {
         computeInsight,
+        statsByEra,
+        rankYears,
         // exposed for unit tests
         directorSeenCount,
         isYearComplete,

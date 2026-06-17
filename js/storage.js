@@ -32,6 +32,7 @@ const StorageManager = (function () {
         seen: [],           // Array of movie IDs marked as seen
         notSeen: [],        // Array of movie IDs marked as not seen
         history: [],        // Last N actions for undo (stores {id, action} objects)
+        activeEras: null,   // v3.3: decade selection (null = all decades)
         lastUpdated: null,
         version: 1
     };
