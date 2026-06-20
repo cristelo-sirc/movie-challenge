@@ -489,6 +489,11 @@
 
         // Check for backup reminder (mobile only) — based on lifetime ratings
         checkBackupReminder(data.progress.globalRated);
+
+        // v3.4: notify the Poster Journal shell (no-op on the legacy page)
+        if (window.UIShell && typeof UIShell.onAppUpdate === 'function') {
+            try { UIShell.onAppUpdate(data); } catch (e) { /* shell render must never break review */ }
+        }
     }
 
     /**
@@ -1896,6 +1901,28 @@ ${baseUrl}`;
         // Otherwise it's a TMDB path
         return `https://image.tmdb.org/t/p/w500${path}`;
     }
+
+    // v3.4: small bridge so the Poster Journal shell can open the decade
+    // filter and "Continue" into a decade. Reuses the existing, tested filter
+    // path — it does NOT change persistence or share semantics.
+    window.AppBridge = {
+        openDecadePicker: function () { openDecadePicker(); },
+        reviewDecade: function (eraId) {
+            if (typeof SlidingWindow === 'undefined' || !eraId) return;
+            suppressYearCardOnce = true;
+            SlidingWindow.setActiveEras([eraId]);
+            StorageManager.save(SlidingWindow.getState());
+            elements.completionState.classList.add('hidden');
+            elements.seenBtn.disabled = false;
+            elements.skipBtn.disabled = false;
+            const prog = SlidingWindow.getProgress();
+            if (prog.remaining <= 0) {
+                showFilterNotice('Nothing left in this decade — add more decades', 'empty');
+            } else {
+                showFilterNotice(`Showing ${SlidingWindow.getCurrentEra()} — ${prog.remaining.toLocaleString()} left to review`);
+            }
+        }
+    };
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {

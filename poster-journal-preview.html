@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poster Journal — Preview (v3.4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   POSTER JOURNAL — Design preview (sample data, not wired to
+   your real progress). Look & navigation only.
+   ============================================================ */
+:root{
+  --bg-0:#080809; --bg-1:#101113; --bg-2:#18191c; --bg-3:#202125;
+  --tx-0:#f7f1e8; --tx-1:#b8b1a8; --tx-2:#7f7971;
+  --seen:#2fd18b; --skip:#f0656f; --red:#c83f3f; --amber:#d8a441;
+  --line:rgba(247,241,232,.08); --line-2:rgba(247,241,232,.14);
+  --r:8px; --r-lg:18px;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --serif:'Fraunces',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans); background:#0a0a0b; color:var(--tx-0);
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+  display:flex; align-items:center; justify-content:center; padding:24px 12px;
+  background-image:radial-gradient(1200px 600px at 50% -10%, #16171a 0%, #0a0a0b 60%);
+}
+.note{position:fixed;top:10px;left:50%;transform:translateX(-50%);font-size:11.5px;color:var(--tx-2);
+  background:rgba(16,17,19,.85);border:1px solid var(--line);padding:6px 12px;border-radius:999px;z-index:99;backdrop-filter:blur(6px)}
+/* phone frame */
+.pj-app{
+  position:relative; width:100%; max-width:412px; height:min(860px,94vh);
+  background:var(--bg-0); border-radius:30px; overflow:hidden;
+  border:1px solid var(--line-2); box-shadow:0 40px 120px rgba(0,0,0,.6);
+  display:flex; flex-direction:column;
+}
+.pj-app::after{ /* restrained film grain */
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.035; z-index:60;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.screens{flex:1; position:relative; overflow:hidden}
+.screen{position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:18px 18px 96px; display:none; animation:fade .28s ease}
+.screen.active{display:block}
+.screen::-webkit-scrollbar{width:0}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- shared bits ---------- */
+.kicker{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+.muted{color:var(--tx-1)} .dim{color:var(--tx-2)}
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px}
+.row{display:flex;align-items:center;gap:12px}
+.spread{display:flex;align-items:center;justify-content:space-between}
+.iconbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--bg-2);
+  border:1px solid var(--line);color:var(--tx-0);cursor:pointer}
+.iconbtn svg{width:18px;height:18px}
+.bar{height:7px;border-radius:999px;background:var(--bg-3);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--seen),#5fe0a6)}
+
+/* ---------- REVIEW ---------- */
+.rv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.ring{--p:46; position:relative;width:54px;height:54px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(var(--seen) calc(var(--p)*1%), var(--bg-3) 0)}
+.ring::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bg-0)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:700;z-index:1}
+.rv-count b{font-size:14px;font-weight:700} .rv-count span{font-size:11.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid var(--line-2);
+  color:var(--tx-0);font-size:13px;font-weight:600;padding:8px 12px;border-radius:999px;cursor:pointer}
+.pill svg{width:14px;height:14px;color:var(--tx-1)}
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:10px 0 4px;min-height:430px}
+/* full blurred poster-colour ambience behind the deck */
+.ambient{position:absolute;inset:-14% -10% -4%;z-index:0;background-size:cover;background-position:center;
+  filter:blur(60px) saturate(1.45);opacity:.55;transform:scale(1.15);transition:background-image .5s,opacity .5s}
+.ambient::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(72% 56% at 50% 42%, transparent 0%, rgba(8,8,9,.5) 76%, var(--bg-0) 100%)}
+/* deck: previous + current + next posters */
+.deck{position:relative;z-index:1;width:100%;height:min(404px,56vh);display:flex;align-items:center;justify-content:center}
+.poster{position:absolute;width:min(258px,64vw);aspect-ratio:2/3;border-radius:16px;overflow:hidden;
+  background:var(--bg-2);transition:transform .4s var(--e,cubic-bezier(.2,.7,.2,1)),opacity .4s}
+.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.poster .fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--tx-2);font-size:13px}
+.poster.main{z-index:3;box-shadow:0 26px 64px rgba(0,0,0,.66),0 0 0 1px rgba(255,255,255,.06)}
+.poster.side{z-index:2;opacity:.4;filter:brightness(.58) saturate(.9)}
+.poster.prev{transform:translateX(-70%) scale(.82)}
+.poster.next{transform:translateX(70%) scale(.82)}
+.poster.main.go-left{transform:translateX(-138%) rotate(-13deg);opacity:0}
+.poster.main.go-right{transform:translateX(138%) rotate(13deg);opacity:0}
+.yr{position:relative;z-index:1;font-family:var(--serif);font-size:30px;font-weight:600;margin-top:14px;letter-spacing:.01em}
+.ttl{position:relative;z-index:1;font-size:13.5px;color:var(--tx-1);margin-top:2px;text-align:center;max-width:80%}
+.hint{position:relative;z-index:1;font-size:12px;color:var(--tx-2);margin-top:12px}
+.actions{display:flex;align-items:flex-start;justify-content:center;gap:26px;margin-top:6px}
+.act{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.act .b{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;transition:transform .15s,box-shadow .2s}
+.act:active .b{transform:scale(.92)}
+.act .b svg{width:26px;height:26px}
+.act.skip .b{background:radial-gradient(120% 120% at 30% 25%,#f4828a,#e0535e);color:#fff;box-shadow:0 10px 26px rgba(240,101,111,.34)}
+.act.undo .b{background:var(--bg-2);border:1px solid var(--line-2);color:var(--tx-1);width:56px;height:56px}
+.act.seen .b{background:radial-gradient(120% 120% at 30% 25%,#54e0a4,#21b779);color:#06281c;box-shadow:0 10px 26px rgba(47,209,139,.34)}
+.act label{font-size:12px;color:var(--tx-1);font-weight:500}
+.act.undo label{font-size:11px}
+
+/* ---------- DIARY ---------- */
+.title-xl{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.01em}
+.sub{font-size:13px;color:var(--tx-1);margin-top:2px}
+.dna{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:6px}
+.dna .big{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1}
+.dna .big.s{color:var(--seen)} .dna .big.r{color:var(--skip);text-align:right}
+.dna .lab{font-size:12px;color:var(--tx-1);margin-top:5px;display:flex;align-items:center;gap:5px}
+.dna .lab.r{justify-content:flex-end}
+.donut{--p:46;position:relative;width:108px;height:108px;border-radius:50%;
+  background:conic-gradient(var(--seen) calc(var(--p)*1%), var(--skip) 0)}
+.donut::after{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--bg-1)}
+.donut b{position:absolute;inset:0;display:grid;place-content:center;text-align:center;z-index:1;line-height:1.1}
+.donut b i{font-style:normal;font-size:22px;font-weight:800;font-family:var(--serif)}
+.donut b span{font-size:10px;color:var(--tx-1);letter-spacing:.08em;text-transform:uppercase}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.mini .kicker{font-size:10px}
+.mini .v{font-family:var(--serif);font-size:26px;font-weight:600;margin-top:8px}
+.mini.s .v{color:var(--seen)} .mini .t{font-size:12px;color:var(--tx-1);margin-top:2px}
+.mini .ic{float:right;color:var(--amber)} .mini.s .ic{color:var(--seen)}
+.timeline{display:flex;align-items:flex-end;gap:3px;height:96px;margin:14px 0 6px}
+.timeline i{flex:1;border-radius:2px;background:var(--seen);opacity:.9}
+.tl-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--tx-2)}
+.chapters{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.chip{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:10px 6px;text-align:center}
+.chip.on{border-color:rgba(47,209,139,.5);box-shadow:0 0 0 1px rgba(47,209,139,.25) inset}
+.chip .d{font-size:12px;font-weight:600} .chip .p{font-size:14px;font-weight:700;margin:6px 0;font-family:var(--serif)}
+.chip .b{height:4px;border-radius:999px;background:var(--bg-3);overflow:hidden}
+.chip .b>i{display:block;height:100%;background:var(--seen)}
+.chip.warm .b>i{background:var(--skip)}
+
+/* ---------- DECADES list ---------- */
+.filter-btn{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--bg-1);
+  border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;color:var(--tx-0);cursor:pointer;margin-bottom:14px}
+.filter-btn .l{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600}
+.filter-btn svg{width:16px;height:16px;color:var(--tx-1)}
+.dec-card{display:flex;align-items:center;gap:14px;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:14px;margin-bottom:12px;cursor:pointer;transition:border-color .2s,transform .1s}
+.dec-card:active{transform:scale(.99)} .dec-card:hover{border-color:var(--line-2)}
+.dec-strip{display:flex;flex:0 0 auto}
+.dec-strip img{width:30px;height:45px;object-fit:cover;border-radius:4px;margin-left:-10px;border:1px solid var(--bg-0);background:var(--bg-3)}
+.dec-strip img:first-child{margin-left:0}
+.dec-meta{flex:1;min-width:0}
+.dec-meta .n{font-family:var(--serif);font-size:20px;font-weight:600}
+.dec-meta .s{font-size:12px;color:var(--tx-1);margin:4px 0 7px}
+.dec-meta .pct{font-size:13px;font-weight:700;color:var(--seen);margin-left:8px}
+.chev{color:var(--tx-2);flex:0 0 auto}.chev svg{width:18px;height:18px}
+
+/* ---------- DECADE DETAIL ---------- */
+.det-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.back{display:flex;align-items:center;gap:5px;color:var(--red);font-size:14px;font-weight:600;cursor:pointer;background:none;border:none}
+.back svg{width:17px;height:17px}
+.det-title{font-family:var(--serif);font-size:21px;font-weight:600}
+.hero{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:stretch}
+.hero .pname{font-family:var(--serif);font-size:30px;font-weight:600;color:var(--seen);line-height:1}
+.hero .plab{font-size:12.5px;color:var(--tx-1);margin:6px 0 14px}
+.hero .pbar{margin-bottom:8px}
+.hero .pcount{font-size:12px;color:var(--tx-2)}
+.hero .pct-inline{float:right;font-size:12.5px;font-weight:700;color:var(--tx-1)}
+.ticket{position:relative;width:104px;background:linear-gradient(160deg,#e7b860,#caa23c);color:#3a2c08;border-radius:10px;
+  padding:12px 10px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.ticket::before,.ticket::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--bg-1);left:-7px}
+.ticket::before{top:calc(50% - 7px)} .ticket::after{right:-7px;left:auto;top:calc(50% - 7px)}
+.ticket .k{font-size:9px;font-weight:800;letter-spacing:.12em} .ticket .n{font-family:var(--serif);font-size:30px;font-weight:700;line-height:1;margin:4px 0}
+.ticket .t{font-size:9.5px;font-weight:600;line-height:1.2}
+.ticket .star{font-size:14px}
+.section-k{margin:20px 0 10px}
+.yrow{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.yrank{width:16px;font-size:13px;font-weight:700;color:var(--tx-2);font-family:var(--serif)}
+.yinfo{flex:1;min-width:0}
+.yinfo .yh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.yinfo .yy{font-size:15px;font-weight:700} .yinfo .yc{font-size:11.5px;color:var(--tx-2)}
+.ythumbs{display:flex;gap:4px;flex:0 0 auto}
+.ythumbs img{width:26px;height:39px;object-fit:cover;border-radius:3px;background:var(--bg-3)}
+.recent{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.recent img{width:58px;height:87px;object-fit:cover;border-radius:7px;flex:0 0 auto;background:var(--bg-3);border:1px solid var(--line)}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;
+  background:linear-gradient(180deg,#42cf90,#23b97a);color:#04271b;font-size:15px;font-weight:700;
+  border:none;border-radius:13px;padding:16px;cursor:pointer;box-shadow:0 12px 30px rgba(47,209,139,.3)}
+.cta svg{width:18px;height:18px}
+
+/* ---------- SETTINGS ---------- */
+.set-sec{margin-top:18px}
+.set-sec h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tx-2);margin-bottom:10px;font-weight:700}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat3 .b{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r);padding:14px 8px;text-align:center}
+.stat3 .b .v{font-family:var(--serif);font-size:22px;font-weight:600} .stat3 .b .l{font-size:11px;color:var(--tx-1);margin-top:3px}
+.set-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:var(--r);padding:13px 14px;margin-bottom:10px}
+.set-row .l{display:flex;align-items:center;gap:11px;font-size:14px} .set-row .l svg{width:18px;height:18px;color:var(--tx-1)}
+.toggle{width:42px;height:25px;border-radius:999px;background:var(--seen);position:relative;cursor:pointer;flex:0 0 auto}
+.toggle::after{content:"";position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;top:3px;right:3px;transition:.2s}
+.toggle.off{background:var(--bg-3)} .toggle.off::after{right:auto;left:3px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border-radius:var(--r);padding:13px;
+  font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--line-2);background:var(--bg-2);color:var(--tx-0);margin-bottom:10px}
+.btn svg{width:16px;height:16px}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger{background:transparent;border-color:rgba(240,101,111,.4);color:var(--skip)}
+
+/* ---------- BOTTOM NAV ---------- */
+.nav{position:absolute;left:0;right:0;bottom:0;height:74px;background:rgba(12,13,15,.92);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;z-index:50;padding-bottom:6px}
+.nav button{flex:1;background:none;border:none;color:var(--tx-2);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;font-size:10.5px;font-weight:600;cursor:pointer;padding-top:8px}
+.nav button svg{width:22px;height:22px}
+.nav button.on{color:var(--red)}
+.toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:var(--bg-3);
+  border:1px solid var(--line-2);color:var(--tx-0);font-size:13px;padding:9px 16px;border-radius:999px;opacity:0;
+  pointer-events:none;transition:.25s;z-index:55;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="note">Poster Journal · design preview (sample data — not your real progress)</div>
+<div class="pj-app">
+  <div class="screens">
+
+    <!-- ===================== REVIEW ===================== -->
+    <section class="screen active" id="s-review">
+      <div class="rv-top">
+        <div class="row" style="gap:10px">
+          <div class="ring" id="rvRing"><b id="rvRingPct">51%</b></div>
+          <div class="rv-count">
+            <b id="rvCount">2,400 / 4,719</b><br><span class="dim" id="rvCountSub">51% complete</span>
+          </div>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="pill" onclick="go('decades')">All Decades
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <button class="iconbtn" onclick="go('diary')" title="Movie Diary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="ambient" id="rvAmbient"></div>
+        <div class="deck">
+          <div class="poster side prev" id="rvPrev"></div>
+          <div class="poster side next" id="rvNext"></div>
+          <div class="poster main" id="rvPoster"><div class="fallback">Loading…</div></div>
+        </div>
+        <div class="yr" id="rvYear">—</div>
+        <div class="ttl" id="rvTitle"></div>
+        <div class="hint">Swipe or tap a choice</div>
+      </div>
+
+      <div class="actions">
+        <div class="act skip" onclick="rate('left')">
+          <div class="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg></div>
+          <label>Haven't Seen</label>
+        </div>
+        <div class="act undo" onclick="undo()">
+          <div class="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a5 5 0 0 1 5 5v2"></path><polyline points="3 10 8 5"></polyline><polyline points="3 10 8 15"></polyline></svg></div>
+          <label>Undo</label>
+        </div>
+        <div class="act seen" onclick="rate('right')">
+          <div class="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+          <label>Seen</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DIARY ===================== -->
+    <section class="screen" id="s-diary">
+      <div class="spread" style="align-items:flex-start">
+        <div>
+          <div class="title-xl">Movie Diary</div>
+          <div class="sub">Your movie journey from 1980–2025</div>
+        </div>
+        <button class="iconbtn" onclick="go('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="kicker">Movie DNA</div>
+        <div class="dna" style="margin-top:12px">
+          <div>
+            <div class="big s" id="dnaSeen">2,400</div>
+            <div class="lab"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> Seen</div>
+          </div>
+          <div class="donut" id="dnaDonut"><b><i id="dnaPct">51%</i><span>Complete</span></b></div>
+          <div>
+            <div class="big r" id="dnaRem">2,319</div>
+            <div class="lab r">Remaining</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="duo">
+        <div class="card mini s">
+          <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="9"/></svg></span>
+          <div class="kicker" style="color:var(--tx-2)">Strongest decade</div>
+          <div class="v" id="strDecade">1990s</div>
+          <div class="t"><span id="strPct">68%</span> complete</div>
+        </div>
+        <div class="card mini">
+          <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 7.1-1.01z"/></svg></span>
+          <div class="kicker" style="color:var(--tx-2)">Top year</div>
+          <div class="v" id="topYear">1994</div>
+          <div class="t">Most watched</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="spread"><div class="kicker" style="color:var(--tx-2)">Timeline</div><div class="dim" style="font-size:11px">1980–2025</div></div>
+        <div class="timeline" id="timeline"></div>
+        <div class="tl-axis"><span>1980</span><span>2025</span></div>
+      </div>
+
+      <div class="kicker" style="color:var(--tx-2);margin:18px 0 8px">By decade</div>
+      <div class="chapters" id="chapters"></div>
+    </section>
+
+    <!-- ===================== DECADES (list) ===================== -->
+    <section class="screen" id="s-decades">
+      <div class="title-xl" style="margin-bottom:14px">Decades</div>
+      <button class="filter-btn" onclick="toast('Filter picker — turn decades on/off (same as today)')">
+        <span class="l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Choose decades to review</span>
+        <span class="dim" style="font-size:12px">All 5 on</span>
+      </button>
+      <div id="decList"></div>
+    </section>
+
+    <!-- ===================== DECADE DETAIL ===================== -->
+    <section class="screen" id="s-detail">
+      <div class="det-head">
+        <button class="back" onclick="go('decades')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg> Decades</button>
+        <div class="det-title" id="detTitle">1980s</div>
+        <button class="iconbtn" onclick="toast('Filter picker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
+      </div>
+
+      <div class="card hero">
+        <div>
+          <div class="pname" id="detName">1980s</div>
+          <div class="plab">Your progress</div>
+          <div class="bar pbar"><i id="detBar" style="width:38%"></i></div>
+          <div class="pcount"><span id="detCounts">192 seen · 318 remaining</span><span class="pct-inline" id="detPct">38%</span></div>
+        </div>
+        <div class="ticket">
+          <div class="k">MILESTONE</div>
+          <div class="star">★</div>
+          <div class="n" id="detMile">150</div>
+          <div class="t">movies seen</div>
+        </div>
+      </div>
+
+      <div class="kicker section-k" style="color:var(--tx-2)">Top years</div>
+      <div id="detYears"></div>
+
+      <div class="kicker section-k" style="color:var(--tx-2)">Recently seen</div>
+      <div class="recent" id="detRecent"></div>
+
+      <button class="cta" onclick="go('review');toast('Continuing in this decade')">Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </section>
+
+    <!-- ===================== SETTINGS ===================== -->
+    <section class="screen" id="s-settings">
+      <div class="title-xl" style="margin-bottom:6px">Settings</div>
+
+      <div class="set-sec">
+        <h4>Your progress</h4>
+        <div class="stat3">
+          <div class="b"><div class="v" style="color:var(--seen)">2,400</div><div class="l">Seen</div></div>
+          <div class="b"><div class="v">1,180</div><div class="l">Haven't Seen</div></div>
+          <div class="b"><div class="v">1,139</div><div class="l">Remaining</div></div>
+        </div>
+      </div>
+
+      <div class="set-sec">
+        <h4>Preferences</h4>
+        <div class="set-row">
+          <span class="l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Sound effects</span>
+          <div class="toggle" id="sndToggle" onclick="this.classList.toggle('off');toast(this.classList.contains('off')?'Sound off':'Sound on')"></div>
+        </div>
+      </div>
+
+      <div class="set-sec">
+        <h4>Backup &amp; sync</h4>
+        <button class="btn primary" onclick="toast('Backup — shows your QR code')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Backup (QR code)</button>
+        <button class="btn" onclick="toast('Import a progress code')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Import code</button>
+        <button class="btn ghost" onclick="toast('Share your results')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share results</button>
+      </div>
+
+      <div class="set-sec">
+        <h4>Danger zone</h4>
+        <button class="btn danger" onclick="toast('Reset all progress')">Reset all progress</button>
+      </div>
+      <p class="dim" style="font-size:11px;text-align:center;margin-top:14px">Poster Journal · v3.4 preview</p>
+    </section>
+
+  </div>
+
+  <!-- ===================== NAV ===================== -->
+  <nav class="nav" id="nav">
+    <button data-s="review" class="on" onclick="go('review')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7h20v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="m2 7 4-5h12l4 5"/><line x1="7" y1="2" x2="9" y2="7"/><line x1="13" y1="2" x2="15" y2="7"/></svg>
+      Review
+    </button>
+    <button data-s="diary" onclick="go('diary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Diary
+    </button>
+    <button data-s="decades" onclick="go('decades')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Decades
+    </button>
+    <button data-s="settings" onclick="go('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const IMG='https://image.tmdb.org/t/p/w342';
+const MOVIES=[{"id": 1891, "title": "The Empire Strikes Back", "year": 1980, "poster_path": "/nNAeTmF4CtdSgMDplXTDPOpYzsX.jpg", "backdrop_path": "/aJCtkxLLzkk1pECehVjKHA2lBgw.jpg", "vote_average": 8.4}, {"id": 105, "title": "Back to the Future", "year": 1985, "poster_path": "/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg", "backdrop_path": "/qskzmLTbarKnXDbo2HRj4NJ3vcW.jpg", "vote_average": 8.3}, {"id": 207, "title": "Dead Poets Society", "year": 1989, "poster_path": "/l5NbiHKUmahlAT3Q1ig8Tyl9xrc.jpg", "backdrop_path": "/yYvBNN96Ym3wtPxGCFl7F888WwB.jpg", "vote_average": 8.3}, {"id": 694, "title": "The Shining", "year": 1980, "poster_path": "/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg", "backdrop_path": "/mmd1HnuvAzFc4iuVJcnBrhDNEKr.jpg", "vote_average": 8.2}, {"id": 111, "title": "Scarface", "year": 1983, "poster_path": "/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg", "backdrop_path": "/1qM2BYNE11Viby8ImC9LC00DgDr.jpg", "vote_average": 8.2}, {"id": 78, "title": "Blade Runner", "year": 1982, "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg", "backdrop_path": "/hJ5R9d6QuH3tzr8L8neZZTuzNXm.jpg", "vote_average": 7.9}, {"id": 85, "title": "Raiders of the Lost Ark", "year": 1981, "poster_path": "/ceG9VzoRAVGwivFU403Wc3AHRys.jpg", "backdrop_path": "/zPACwR32amTNvzId9qyapCWXYDJ.jpg", "vote_average": 7.9}, {"id": 1892, "title": "Return of the Jedi", "year": 1983, "poster_path": "/jQYlydvHm3kUix1f8prMucrplhm.jpg", "backdrop_path": "/ziECpBRIyclmBNaFSWlvCfsKbMD.jpg", "vote_average": 7.9}, {"id": 278, "title": "The Shawshank Redemption", "year": 1994, "poster_path": "/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg", "backdrop_path": "/zfbjgQE1uSd9wiPTX4VzsLi0rGG.jpg", "vote_average": 8.7}, {"id": 424, "title": "Schindler's List", "year": 1993, "poster_path": "/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg", "backdrop_path": "/zb6fM1CX41D9rF9hdgclu0peUmy.jpg", "vote_average": 8.6}, {"id": 497, "title": "The Green Mile", "year": 1999, "poster_path": "/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg", "backdrop_path": "/b6HWTOxn1xevvyHU2K9ICvaRU6g.jpg", "vote_average": 8.5}, {"id": 680, "title": "Pulp Fiction", "year": 1994, "poster_path": "/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg", "backdrop_path": "/96hiUXEuYsu4tcnvlaY8tEMFM0m.jpg", "vote_average": 8.5}, {"id": 13, "title": "Forrest Gump", "year": 1994, "poster_path": "/saHP97rTPS5eLmrLQEcANmKrsFl.jpg", "backdrop_path": "/67HggiWaP9ZLv5sPYmyRV37yAJM.jpg", "vote_average": 8.5}, {"id": 769, "title": "GoodFellas", "year": 1990, "poster_path": "/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg", "backdrop_path": "/gILte6Zd7m1YneIr6MVhh30S9pr.jpg", "vote_average": 8.5}, {"id": 637, "title": "Life Is Beautiful", "year": 1997, "poster_path": "/mfnkSeeVOBVheuyn2lo4tfmOPQb.jpg", "backdrop_path": "/6aNKD81RHR1DqUUa8kOZ1TBY1Lp.jpg", "vote_average": 8.4}, {"id": 550, "title": "Fight Club", "year": 1999, "poster_path": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg", "backdrop_path": "/5TiwfWEaPSwD20uwXjCTUqpQX70.jpg", "vote_average": 8.4}, {"id": 129, "title": "Spirited Away", "year": 2001, "poster_path": "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", "backdrop_path": "/ukfI9QkU1aIhOhKXYWE9n3z1mFR.jpg", "vote_average": 8.5}, {"id": 155, "title": "The Dark Knight", "year": 2008, "poster_path": "/qJ2tW6WMUDux911r6m7haRef0WH.jpg", "backdrop_path": "/dqK9Hag1054tghRQSqLSfrkvQnA.jpg", "vote_average": 8.5}, {"id": 122, "title": "The Lord of the Rings: The Return of the King", "year": 2003, "poster_path": "/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg", "backdrop_path": "/2u7zbn8EudG6kLlBzUYqP8RyFU4.jpg", "vote_average": 8.5}, {"id": 120, "title": "The Lord of the Rings: The Fellowship of the Ring", "year": 2001, "poster_path": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg", "backdrop_path": "/oiwc338EoBgS4sEI2ixAny4KQKg.jpg", "vote_average": 8.4}, {"id": 121, "title": "The Lord of the Rings: The Two Towers", "year": 2002, "poster_path": "/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg", "backdrop_path": "/kWYfW2Re0rUDE6IHhy4CRuKWeFr.jpg", "vote_average": 8.4}, {"id": 98, "title": "Gladiator", "year": 2000, "poster_path": "/ty8TGRuvJLPUmAR1H1nRIsgwvim.jpg", "backdrop_path": "/jhk6D8pim3yaByu1801kMoxXFaX.jpg", "vote_average": 8.2}, {"id": 16869, "title": "Inglourious Basterds", "year": 2009, "poster_path": "/7sfbEnaARXDDhKm0CZ7D7uc2sbo.jpg", "backdrop_path": "/hwNtEmmugU5Yd7hpfprNWI0DGIn.jpg", "vote_average": 8.2}, {"id": 1124, "title": "The Prestige", "year": 2006, "poster_path": "/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg", "backdrop_path": "/qc9zR02j2apoEwMdptMYBoAFYUC.jpg", "vote_average": 8.2}, {"id": 157336, "title": "Interstellar", "year": 2014, "poster_path": "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", "backdrop_path": "/8sNiAPPYU14PUepFNeSNGUTiHW.jpg", "vote_average": 8.5}, {"id": 496243, "title": "Parasite", "year": 2019, "poster_path": "/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", "backdrop_path": "/hiKmpZMGZsrkA3cdce8a7Dpos1j.jpg", "vote_average": 8.5}, {"id": 372058, "title": "Your Name.", "year": 2016, "poster_path": "/q719jXXEzOoYaps6babgKnONONX.jpg", "backdrop_path": "/8x9iKH8kWA0zdkgNdpAew7OstYe.jpg", "vote_average": 8.5}, {"id": 324857, "title": "Spider-Man: Into the Spider-Verse", "year": 2018, "poster_path": "/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg", "backdrop_path": "/8mnXR9rey5uQ08rZAvzojKWbDQS.jpg", "vote_average": 8.4}, {"id": 244786, "title": "Whiplash", "year": 2014, "poster_path": "/7fn624j5lj3xTme2SgiLCeuedmO.jpg", "backdrop_path": "/1kuYEvLkX2nTkbfzN6X0w0xQFQU.jpg", "vote_average": 8.4}, {"id": 27205, "title": "Inception", "year": 2010, "poster_path": "/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg", "backdrop_path": "/ii8QGacT3MXESqBckQlyrATY0lT.jpg", "vote_average": 8.4}, {"id": 77338, "title": "The Intouchables", "year": 2011, "poster_path": "/1QU7HKgsQbGpzsJbJK4pAVQV9F5.jpg", "backdrop_path": "/5ATSg3rufgIMfcrHd2gEi678hZu.jpg", "vote_average": 8.3}, {"id": 299534, "title": "Avengers: Endgame", "year": 2019, "poster_path": "/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg", "backdrop_path": "/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg", "vote_average": 8.2}, {"id": 634649, "title": "Spider-Man: No Way Home", "year": 2021, "poster_path": "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg", "backdrop_path": "/nqUThBjou0TAWXu93Q4SNFpgqai.jpg", "vote_average": 7.9}, {"id": 438631, "title": "Dune", "year": 2021, "poster_path": "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", "backdrop_path": "/wYMbnrdRCREjNLwFlG5SLWzBjui.jpg", "vote_average": 7.8}, {"id": 76600, "title": "Avatar: The Way of Water", "year": 2022, "poster_path": "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", "backdrop_path": "/cd8YDn7M0lfaHhZdU6MvCDxPalP.jpg", "vote_average": 7.6}];
+// representative decade aggregates (real manifest totals)
+const DECADES=[
+  {id:'1980s',total:1172,seen:445},
+  {id:'1990s',total:1690,seen:1149},
+  {id:'2000s',total:1316,seen:592},
+  {id:'2010s',total:398,seen:167},
+  {id:'2020s',total:143,seen:47},
+];
+const byYear=y=>MOVIES.filter(m=>m.year===y);
+const posters=(arr,n)=>arr.filter(m=>m.poster_path).slice(0,n)
+  .map(m=>`<img src="${IMG}${m.poster_path}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`).join('');
+
+/* ---- navigation ---- */
+function go(s){
+  document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
+  document.getElementById('s-'+s).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  document.querySelector('.screens').scrollTop=0;
+  document.getElementById('s-'+s).scrollTop=0;
+}
+let tt;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1900);}
+
+/* ---- Review demo stream ---- */
+let i=0,seenN=2400,total=4719;
+function fillPoster(el,m){
+  el.innerHTML = (m&&m.poster_path)
+    ? `<img src="${IMG}${m.poster_path}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'fallback\\'>No poster</div>'">`
+    : `<div class="fallback">No poster</div>`;
+}
+function showCard(){
+  const n=MOVIES.length, at=k=>MOVIES[((k%n)+n)%n];
+  const cur=at(i), prev=at(i-1), next=at(i+1);
+  const main=document.getElementById('rvPoster');
+  main.className='poster main';
+  fillPoster(main,cur);
+  fillPoster(document.getElementById('rvPrev'),prev);
+  fillPoster(document.getElementById('rvNext'),next);
+  document.getElementById('rvYear').textContent=cur.year;
+  document.getElementById('rvTitle').textContent=cur.title;
+  const amb=document.getElementById('rvAmbient'), src=cur.backdrop_path||cur.poster_path;
+  if(src) amb.style.backgroundImage=`url(${IMG}${src})`;
+}
+function syncRing(){
+  const pct=Math.round(seenN/total*100);
+  document.getElementById('rvRing').style.setProperty('--p',pct);
+  document.getElementById('rvRingPct').textContent=pct+'%';
+  document.getElementById('rvCount').textContent=seenN.toLocaleString()+' / '+total.toLocaleString();
+  document.getElementById('rvCountSub').textContent=pct+'% complete';
+}
+function rate(dir){
+  const main=document.getElementById('rvPoster');
+  main.classList.add(dir==='left'?'go-left':'go-right');
+  if(dir==='right'){seenN++;syncRing();}
+  setTimeout(()=>{i++;showCard();},330);
+}
+function undo(){ if(i>0){i--;seenN=Math.max(0,seenN-1);syncRing();showCard();toast('Undid last choice');} }
+
+/* ---- Diary ---- */
+function buildDiary(){
+  const seen=DECADES.reduce((a,d)=>a+d.seen,0), tot=DECADES.reduce((a,d)=>a+d.total,0);
+  const pct=Math.round(seen/tot*100);
+  document.getElementById('dnaSeen').textContent=seen.toLocaleString();
+  document.getElementById('dnaRem').textContent=(tot-seen).toLocaleString();
+  document.getElementById('dnaPct').textContent=pct+'%';
+  document.getElementById('dnaDonut').style.setProperty('--p',pct);
+  const best=[...DECADES].sort((a,b)=>b.seen/b.total-a.seen/a.total)[0];
+  document.getElementById('strDecade').textContent=best.id;
+  document.getElementById('strPct').textContent=Math.round(best.seen/best.total*100)+'%';
+  // timeline 1980-2025 (deterministic pseudo heat)
+  let tl='';
+  for(let y=1980;y<=2025;y++){
+    const seed=(Math.sin(y*12.9898)*43758.5453)%1; const r=Math.abs(seed);
+    const h=24+Math.round(r*70); const warm=r<.32;
+    tl+=`<i style="height:${h}%;background:${warm?'var(--skip)':'var(--seen)'};opacity:${.55+r*.45}"></i>`;
+  }
+  document.getElementById('timeline').innerHTML=tl;
+  // chapters
+  document.getElementById('chapters').innerHTML=DECADES.map(d=>{
+    const p=Math.round(d.seen/d.total*100); const on=d.id===best.id; const warm=p<40;
+    return `<div class="chip ${on?'on':''} ${warm?'warm':''}"><div class="d">${d.id}</div><div class="p">${p}%</div><div class="b"><i style="width:${p}%"></i></div></div>`;
+  }).join('');
+  const ty=topYears()[0]; if(ty) document.getElementById('topYear').textContent=ty.year;
+}
+
+/* ---- Decades list ---- */
+function buildDecList(){
+  document.getElementById('decList').innerHTML=DECADES.map(d=>{
+    const p=Math.round(d.seen/d.total*100);
+    const strip=posters(MOVIES.filter(m=>m.id&&(''+m.year).startsWith(d.id.slice(0,3))),3);
+    return `<div class="dec-card" onclick="openDetail('${d.id}')">
+      <div class="dec-strip">${posters(decMovies(d.id),3)||''}</div>
+      <div class="dec-meta"><div class="n">${d.id}<span class="pct">${p}%</span></div>
+        <div class="s">${d.seen.toLocaleString()} seen · ${(d.total-d.seen).toLocaleString()} remaining</div>
+        <div class="bar"><i style="width:${p}%;background:${p<40?'var(--skip)':'var(--seen)'}"></i></div>
+      </div>
+      <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>`;
+  }).join('');
+}
+function decMovies(id){const dec=parseInt(id);return MOVIES.filter(m=>m.year>=dec&&m.year<=dec+9);}
+function topYears(){
+  // build from sample: years with most sample posters, representative counts
+  const counts={};MOVIES.forEach(m=>{counts[m.year]=(counts[m.year]||0)+1;});
+  return Object.keys(counts).map(y=>({year:+y,n:counts[y]})).sort((a,b)=>b.n-a.n||a.year-b.year);
+}
+
+/* ---- Decade detail ---- */
+function openDetail(id){
+  const d=DECADES.find(x=>x.id===id); const dec=parseInt(id); const p=Math.round(d.seen/d.total*100);
+  document.getElementById('detTitle').textContent=id;
+  document.getElementById('detName').textContent=id;
+  document.getElementById('detBar').style.width=p+'%';
+  document.getElementById('detBar').style.background=p<40?'var(--skip)':'var(--seen)';
+  document.getElementById('detPct').textContent=p+'%';
+  document.getElementById('detCounts').textContent=d.seen.toLocaleString()+' seen · '+(d.total-d.seen).toLocaleString()+' remaining';
+  document.getElementById('detMile').textContent=(Math.floor(d.seen/50)*50)||10;
+  // top years within decade
+  const yrs=decMovies(id).reduce((a,m)=>{(a[m.year]=a[m.year]||[]).push(m);return a;},{});
+  const ranked=Object.keys(yrs).map(y=>({y:+y,ms:yrs[y]})).sort((a,b)=>b.ms.length-a.ms.length||a.y-b.y).slice(0,5);
+  document.getElementById('detYears').innerHTML=ranked.map((r,idx)=>{
+    const seen=Math.max(1,Math.round(r.ms.length*1.4)+8), tot=seen+10+idx*4;
+    return `<div class="yrow"><div class="yrank">${idx+1}</div>
+      <div class="yinfo"><div class="yh"><span class="yy">${r.y}</span><span class="yc">${seen} / ${tot}</span></div>
+        <div class="bar"><i style="width:${Math.round(seen/tot*100)}%"></i></div></div>
+      <div class="ythumbs">${posters(r.ms,3)}</div></div>`;
+  }).join('')||'<p class="dim" style="font-size:12px">Mark some films as seen to see your top years.</p>';
+  document.getElementById('detRecent').innerHTML=posters(decMovies(id).filter(m=>m.poster_path),8);
+  go('detail');
+}
+
+/* init */
+buildDiary();buildDecList();showCard();syncRing();
+</script>
+</body>
+</html>

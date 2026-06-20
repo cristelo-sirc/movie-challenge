@@ -1,4 +1,4 @@
-# Claude Development Notes
+# Codex Development Notes
 
 This document tracks AI-assisted development work on this project.
 
