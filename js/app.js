@@ -175,8 +175,9 @@
     }
 
     /**
-     * Show a stat-drop interstitial. Dismiss on tap, any key, or auto after 6s.
-     * Never touches ratings, history, or saved state.
+     * Show a stat-drop interstitial. Tap (or any key) to dismiss — no auto-dismiss.
+     * "Armed" after a short delay so an in-flight tap aimed at the previous card
+     * can't dismiss it before it's read. Never touches ratings/history/saved state.
      */
     function showStatDrop(insight) {
         if (document.querySelector('.stat-drop')) return;
@@ -194,12 +195,15 @@
         document.body.appendChild(overlay);
         vibrate(20);
 
+        // Arm after a short delay; until then, taps are ignored so a tap meant
+        // for the next card can't accidentally dismiss this before it's read.
+        setTimeout(() => overlay.classList.add('armed'), 700);
         const dismiss = () => {
+            if (!overlay.classList.contains('armed')) return;
             overlay.classList.add('closing');
             setTimeout(() => overlay.remove(), 250);
         };
         overlay.addEventListener('click', dismiss);
-        setTimeout(() => { if (overlay.parentNode) dismiss(); }, 6000);
     }
 
     /**
@@ -208,8 +212,12 @@
     function dismissStatDropIfOpen() {
         const overlay = document.querySelector('.stat-drop');
         if (overlay) {
-            overlay.classList.add('closing');
-            setTimeout(() => overlay.remove(), 250);
+            // Swallow the key so it never rates the next card; only actually
+            // dismiss once the drop is armed (see showStatDrop).
+            if (overlay.classList.contains('armed')) {
+                overlay.classList.add('closing');
+                setTimeout(() => overlay.remove(), 250);
+            }
             return true;
         }
         return false;
@@ -608,7 +616,11 @@
         document.body.appendChild(takeover);
         vibrate(20);
 
+        // Armed after a short delay so an in-flight tap aimed at the previous
+        // card can't dismiss the takeover before it's read.
+        setTimeout(() => takeover.classList.add('armed'), 700);
         const dismiss = () => {
+            if (!takeover.classList.contains('armed')) return;
             takeover.classList.add('closing');
             setTimeout(() => takeover.remove(), 350);
         };

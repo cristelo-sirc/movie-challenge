@@ -102,7 +102,7 @@ const UIShell = (function () {
         const cur = win[0];
         const yEl = $('rvYear'); if (yEl) yEl.textContent = cur ? (cur.year || '') : '';
         // next peek = upcoming card; prev peek = last rated movie (from history)
-        const nextEl = $('peekNext'); if (nextEl) nextEl.innerHTML = win[1] ? imgTag(win[1], 'w342') : '';
+        const nextEl = $('peekNext'); if (nextEl) nextEl.innerHTML = win[1] ? imgTag(win[1], 'w185') : '';
         const prevEl = $('peekPrev');
         if (prevEl) {
             const st = data && data.state;
@@ -112,7 +112,7 @@ const UIShell = (function () {
                 const it = (typeof ItemManager !== 'undefined') ? ItemManager.getById(hist[i].id) : null;
                 if (it) { prevItem = it; break; }
             }
-            prevEl.innerHTML = prevItem ? imgTag(prevItem, 'w342') : '';
+            prevEl.innerHTML = prevItem ? imgTag(prevItem, 'w185') : '';
         }
     }
 

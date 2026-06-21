@@ -35,16 +35,16 @@ body[data-pj] #app{ display:block; position:relative; height:100%; overflow:hidd
 .pj-review > *{ position:relative; z-index:1; }
 
 /* ambient blurred poster wash behind the Review deck (uses --bg-image set by app.js) */
-.pj-review::before{ content:""; position:absolute; inset:-14% -10% -4%; z-index:0;
+.pj-review::before{ content:""; position:absolute; inset:-8% -8% 0; z-index:0;
   background-image:var(--bg-image); background-size:cover; background-position:center;
-  filter:blur(62px) saturate(1.45); opacity:0; transform:scale(1.15); transition:opacity .6s; }
+  filter:blur(30px) saturate(1.4); opacity:0; transform:scale(1.06); transition:opacity .6s; }
 #app.has-bg .pj-review.active::before{ opacity:.5; }
 .pj-review::after{ content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
   background:radial-gradient(78% 52% at 50% 40%, transparent 0%, rgba(8,8,9,.5) 74%, var(--pj-bg-0) 100%); }
 
 /* ---------- bottom nav ---------- */
 .pj-nav{ position:absolute; left:0; right:0; bottom:0; height:var(--pj-nav-h); z-index:40;
-  display:flex; background:rgba(11,12,14,.92); backdrop-filter:blur(14px);
+  display:flex; background:rgba(9,10,12,.975);
   border-top:1px solid var(--pj-line); padding-bottom:max(0px,env(safe-area-inset-bottom)); }
 .pj-nav button{ flex:1; background:none; border:none; cursor:pointer; color:var(--pj-tx-2);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
@@ -263,7 +263,7 @@ body[data-pj] .streak-indicator.inferno{ background:linear-gradient(135deg,#e98b
   transform:translateX(-50%) scale(1.06); border-color:rgba(255,255,255,.35); }
 
 /* ---- Stat drop (full-screen, restyled per your choice) ---- */
-body[data-pj] .stat-drop{ background:rgba(8,8,9,.72); backdrop-filter:blur(10px); }
+body[data-pj] .stat-drop{ background:rgba(8,8,9,.8); backdrop-filter:blur(6px); }
 body[data-pj] .stat-drop-card{ background:var(--pj-bg-1); border:1px solid var(--pj-line-2);
   border-radius:16px; box-shadow:0 26px 64px rgba(0,0,0,.6); }
 body[data-pj] .stat-drop-kicker{ color:var(--pj-red); }
@@ -273,8 +273,8 @@ body[data-pj] .stat-drop-hint{ color:var(--pj-tx-2); }
 
 /* ---- Year takeover (full-screen, restyled per your choice) ---- */
 body[data-pj] .decade-takeover{
-  background:radial-gradient(ellipse 82% 60% at 50% 38%, rgba(200,63,63,.18) 0%, transparent 70%), rgba(8,8,9,.88);
-  backdrop-filter:blur(12px); }
+  background:radial-gradient(ellipse 82% 60% at 50% 38%, rgba(200,63,63,.18) 0%, transparent 70%), rgba(8,8,9,.9);
+  backdrop-filter:blur(8px); }
 body[data-pj] .decade-takeover h1{ font-family:var(--pj-serif); font-weight:600; letter-spacing:0;
   color:var(--pj-tx-0); text-shadow:0 0 50px rgba(200,63,63,.4); }
 body[data-pj] .dt-kicker{ color:var(--pj-red); }
@@ -310,3 +310,10 @@ body[data-pj] .backup-reminder-banner .backup-now-btn{ background:var(--pj-amber
 body[data-pj] .backup-reminder-banner .banner-close,
 body[data-pj] .private-browsing-banner .banner-close{ color:var(--pj-tx-2); }
 @keyframes pjMomentIn{ from{ opacity:0; transform:translate(-50%,10px); } to{ opacity:1; transform:translate(-50%,0); } }
+
+/* "Tap to continue" hints fade in only once the moment is armed (see app.js),
+   so they double as the signal that it's now safe to dismiss. */
+body[data-pj] .stat-drop .stat-drop-hint,
+body[data-pj] .decade-takeover .dt-hint{ opacity:0; transition:opacity .35s ease; }
+body[data-pj] .stat-drop.armed .stat-drop-hint,
+body[data-pj] .decade-takeover.armed .dt-hint{ opacity:1; }

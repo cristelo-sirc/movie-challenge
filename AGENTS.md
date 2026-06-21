@@ -77,6 +77,18 @@ All CSS-only overrides scoped to `body[data-pj]` (legacy page untouched). Re-ver
 26-check boot harness + a streak-fires check (count→3, unhidden) + node --check, all clean.
 Preview asset cache-bust bumped `v=30`→`v=31`.
 
+### Follow-up — Moment dismissal + performance
+- **Stat drop & year takeover no longer auto-dismiss, and a stray in-flight tap can't
+  close them.** Both gain a 700ms "arm" delay (a tap meant for the previous card is
+  swallowed) and the "Tap to continue" hint fades in only once armed. The stat drop's 6s
+  auto-dismiss was removed (now tap-only, matching the year card). The keyboard path also
+  swallows the key during arming so it never rates the next card.
+- **Performance:** Review ambient blur cut 62px→30px (smaller buffer, far less repaint per
+  swipe); the bottom-nav `backdrop-filter` removed for a near-opaque background (kills
+  scroll jank); takeover blurs trimmed (10/12→6/8px); prev/next peeks now load w185 not w342.
+- Verified: 26-check boot harness + a 4-step stat-drop arming test + node --check, all clean.
+  Preview cache-bust `v=31`→`v=32`. (app.js changes are shared but improve the legacy page identically.)
+
 ## Session: Decade Selection + Stats Screen (Jun 2026) — v3.3.0
 
 ### Overview
