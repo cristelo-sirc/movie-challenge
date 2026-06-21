@@ -212,7 +212,7 @@ const GamificationManager = (function () {
     function triggerConfetti(container) {
         if (!enableConfetti) return;
 
-        const colors = ['#fbbf24', '#f472b6', '#60a5fa', '#34d399', '#a78bfa', '#fb923c'];
+        const colors = ['#2fd18b', '#d8a441', '#f0656f', '#c83f3f', '#f7f1e8', '#5fe0a6'];
         const confettiCount = 50;
 
         for (let i = 0; i < confettiCount; i++) {

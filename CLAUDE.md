@@ -62,6 +62,21 @@ via the existing `setActiveEras()` path.
   contrast) is best confirmed in a real browser — logic and DOM wiring are covered by the
   tests above; HTML could not be rasterised in the build sandbox.
 
+### Follow-up — Moments restyle (preview iteration)
+Unified all transient feedback ("Moments") into the Poster Journal language and fixed
+placement so nothing collides with the new header / tab bar:
+- **Streak pill** — root cause of the misplaced "🔥" was the `.pj-review > *` rule
+  overriding its `position:fixed`; restored via `body[data-pj] .streak-indicator` (higher
+  specificity) + amber pill, serif count, tasteful hot/inferno escalation.
+- **Stat drop & year takeover** — kept full-screen per request; recoloured from the
+  per-decade `--theme-primary` to the fixed palette (cinema-red / amber) + Fraunces serif.
+- **Filter notice / toast / backup-nudge / private-browsing** — repositioned to tuck under
+  the header (top pills) or above the tab bar (bottom pills); off-black + palette accents.
+- **Confetti** — retinted to the palette (1-line change in `gamification.js`).
+All CSS-only overrides scoped to `body[data-pj]` (legacy page untouched). Re-verified:
+26-check boot harness + a streak-fires check (count→3, unhidden) + node --check, all clean.
+Preview asset cache-bust bumped `v=30`→`v=31`.
+
 ## Session: Decade Selection + Stats Screen (Jun 2026) — v3.3.0
 
 ### Overview

@@ -240,3 +240,73 @@ body[data-pj] .advanced-export summary{ font-size:12.5px; color:var(--pj-tx-2); 
   body[data-pj]{ --card-width:min(212px,52vw); }
   .pj-year{ font-size:26px; }
 }
+
+/* =====================================================================
+   MOMENTS — unified transient feedback. Every popup restyled to the
+   Poster Journal language and kept clear of the fixed header + tab bar.
+   All scoped to body[data-pj] so the legacy page is unaffected.
+   ===================================================================== */
+
+/* ---- Streak pill (fixes the misplaced "fire" counter) ----
+   styles.css pins it fixed/top-centre, but `.pj-review > *` had forced it
+   into the flow (hence the top-left collision). This wins on specificity. */
+body[data-pj] .streak-indicator{
+  position:fixed; top:84px; left:50%; transform:translateX(-50%); z-index:90;
+  background:linear-gradient(135deg,#e8bd6a,#d8a441); color:#3a2c08;
+  border:1px solid rgba(255,255,255,.28); padding:7px 14px; border-radius:999px;
+  font:700 13px/1 'Inter',sans-serif; display:flex; align-items:center; gap:7px;
+  box-shadow:0 8px 24px rgba(216,164,65,.34);
+}
+body[data-pj] .streak-indicator .streak-count{ font-family:var(--pj-serif); font-size:15px; font-weight:700; }
+body[data-pj] .streak-indicator.hot{ background:linear-gradient(135deg,#eaa04a,#e2803f); color:#2a1505; }
+body[data-pj] .streak-indicator.inferno{ background:linear-gradient(135deg,#e98b53,#d6533f,#c83f3f); color:#fff;
+  transform:translateX(-50%) scale(1.06); border-color:rgba(255,255,255,.35); }
+
+/* ---- Stat drop (full-screen, restyled per your choice) ---- */
+body[data-pj] .stat-drop{ background:rgba(8,8,9,.72); backdrop-filter:blur(10px); }
+body[data-pj] .stat-drop-card{ background:var(--pj-bg-1); border:1px solid var(--pj-line-2);
+  border-radius:16px; box-shadow:0 26px 64px rgba(0,0,0,.6); }
+body[data-pj] .stat-drop-kicker{ color:var(--pj-red); }
+body[data-pj] .stat-drop-card h3{ font-family:var(--pj-serif); font-weight:600; letter-spacing:0; color:var(--pj-tx-0); }
+body[data-pj] .stat-drop-card p{ color:var(--pj-tx-1); }
+body[data-pj] .stat-drop-hint{ color:var(--pj-tx-2); }
+
+/* ---- Year takeover (full-screen, restyled per your choice) ---- */
+body[data-pj] .decade-takeover{
+  background:radial-gradient(ellipse 82% 60% at 50% 38%, rgba(200,63,63,.18) 0%, transparent 70%), rgba(8,8,9,.88);
+  backdrop-filter:blur(12px); }
+body[data-pj] .decade-takeover h1{ font-family:var(--pj-serif); font-weight:600; letter-spacing:0;
+  color:var(--pj-tx-0); text-shadow:0 0 50px rgba(200,63,63,.4); }
+body[data-pj] .dt-kicker{ color:var(--pj-red); }
+body[data-pj] .dt-facts li{ color:var(--pj-tx-1); }
+body[data-pj] .dt-facts li::before{ background:var(--pj-amber); box-shadow:0 0 10px rgba(216,164,65,.5); }
+body[data-pj] .dt-quote{ border-left-color:var(--pj-amber); background:rgba(247,241,232,.05); }
+body[data-pj] .dt-quote blockquote{ color:var(--pj-tx-0); font-family:var(--pj-serif); font-weight:500; }
+body[data-pj] .dt-quote figcaption{ color:var(--pj-amber); }
+body[data-pj] .dt-hint{ color:var(--pj-tx-2); }
+
+/* ---- Filter notice (top pill, tucked under the header) ---- */
+body[data-pj] .filter-notice{ top:82px; background:var(--pj-bg-2); border:1px solid var(--pj-line-2);
+  color:var(--pj-tx-0); border-radius:999px; font-weight:600;
+  box-shadow:0 12px 34px rgba(0,0,0,.5); }
+body[data-pj] .filter-notice-icon{ color:var(--pj-seen); }
+body[data-pj] .filter-notice.is-empty{ border-color:rgba(240,101,111,.5); }
+body[data-pj] .filter-notice.is-empty .filter-notice-icon{ color:var(--pj-skip); }
+
+/* ---- Toast (bottom pill, above the tab bar) ---- */
+body[data-pj] .toast{ bottom:calc(var(--pj-nav-h) + 18px); background:var(--pj-bg-3);
+  color:var(--pj-tx-0); border:1px solid var(--pj-line-2); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+body[data-pj] .toast.success{ background:var(--pj-seen); color:#06281c; border-color:transparent; }
+body[data-pj] .toast.error{ background:var(--pj-skip); color:#3a0c10; border-color:transparent; }
+
+/* ---- Backup-nudge + private-browsing notices → bottom pills ---- */
+body[data-pj] .backup-reminder-banner, body[data-pj] .private-browsing-banner{
+  top:auto; right:auto; bottom:calc(var(--pj-nav-h) + 14px); left:50%;
+  transform:translateX(-50%); width:max-content; max-width:calc(100vw - 28px);
+  background:var(--pj-bg-2); border:1px solid var(--pj-line-2); color:var(--pj-tx-0);
+  border-radius:999px; padding:10px 16px; font-size:.82rem; gap:12px;
+  box-shadow:0 14px 34px rgba(0,0,0,.5); animation:pjMomentIn .3s var(--ease-out-back,ease); }
+body[data-pj] .backup-reminder-banner .backup-now-btn{ background:var(--pj-amber); color:#3a2c08; border-radius:999px; }
+body[data-pj] .backup-reminder-banner .banner-close,
+body[data-pj] .private-browsing-banner .banner-close{ color:var(--pj-tx-2); }
+@keyframes pjMomentIn{ from{ opacity:0; transform:translate(-50%,10px); } to{ opacity:1; transform:translate(-50%,0); } }
