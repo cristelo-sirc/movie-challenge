@@ -318,10 +318,19 @@ body[data-pj] .decade-takeover .dt-hint{ opacity:0; transition:opacity .35s ease
 body[data-pj] .stat-drop.armed .stat-drop-hint,
 body[data-pj] .decade-takeover.armed .dt-hint{ opacity:1; }
 
-/* ---- Info card scrolls natively (swipe-to-rate removed) ---- */
-body[data-pj] .movie-card{ touch-action:auto; cursor:default; }
-body[data-pj] .card-back{ justify-content:flex-start; overflow-y:auto;
-  -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; }
+/* ---- Info card scrolls natively ----
+   iOS Safari will NOT scroll overflow content inside a rotateY()/preserve-3d
+   element, so we drop the 3D flip for a flat opacity cross-fade and make the
+   back a plain block scroller. (Swipe-to-rate is already removed.) */
+body[data-pj] .movie-card{ touch-action:auto; cursor:default; perspective:none; }
+body[data-pj] .card-inner{ transform:none !important; transform-style:flat; }
+body[data-pj] .card-front,
+body[data-pj] .card-back{ -webkit-backface-visibility:visible; backface-visibility:visible;
+  transition:opacity .22s ease; }
+body[data-pj] .card-back{ transform:none; display:block; opacity:0; pointer-events:none; z-index:1;
+  overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; }
+body[data-pj] .movie-card.flipped .card-front{ opacity:0; pointer-events:none; }
+body[data-pj] .movie-card.flipped .card-back{ opacity:1; pointer-events:auto; z-index:2; }
 body[data-pj] .card-back-overview{ overflow:visible; flex-grow:0;
   -webkit-mask-image:none; mask-image:none; }
 body[data-pj] .dt-inner.dt-year{ touch-action:pan-y; }

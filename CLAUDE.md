@@ -94,9 +94,12 @@ Preview asset cache-bust bumped `v=30`→`v=31`.
   (the handlers remain as dead code). Rating is via the Seen/Haven't-Seen/Undo buttons
   (and keys). This frees the flipped info card to scroll and removes the document-level
   touchmove work — a perf win the user could feel.
-- **Info card scrolls.** `body[data-pj] .card-back` is now `overflow-y:auto` + `touch-action:pan-y`
-  (was clipped/centered); the synopsis truncation (300 chars) was removed so the full
-  overview shows and scrolls. Tap (no drag) still flips back.
+- **Info card scrolls.** First pass (overflow-y:auto on `.card-back`) still wouldn't scroll on
+  iOS — WebKit refuses to scroll overflow inside a `rotateY()`/`preserve-3d` flip face. Fixed by
+  dropping the 3D flip on `body[data-pj]` for a flat **opacity cross-fade** (`perspective:none`,
+  `transform-style:flat`, `.card-inner` transform `none !important`, front/back toggled by opacity)
+  and making `.card-back` a plain `display:block` block scroller. Synopsis truncation (300 chars)
+  removed so the full overview shows. Tap (no drag) still flips back.
 - **Stat drop & year takeover dismiss ONLY via their "Tap to continue" control** (now a real
   button), not a tap anywhere — so stray taps/scroll can't close them. Still armed-gated +
   no auto-dismiss. Year hint reworded "Tap anywhere"→"Tap to continue".
