@@ -5,246 +5,312 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="description" content="Track your movie watching journey through films from 1980 to 2025">
-    <meta name="theme-color" content="#0a0a0a">
-    <title>Movie Challenge</title>
+    <meta name="theme-color" content="#080809">
+    <title>Movie Diary</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=29">
+    <link rel="stylesheet" href="styles.css?v=35">
+    <link rel="stylesheet" href="styles.v34.css?v=35">
 </head>
 
-<body>
+<body data-pj="1">
     <div id="app">
-        <!-- Progress Bar -->
-        <div class="progress-bar-container">
+        <!-- Progress bar kept for engine compatibility (hidden; ring is the new progress) -->
+        <div class="progress-bar-container" hidden>
             <div class="progress-bar" id="progressBar"></div>
         </div>
 
-        <!-- Header HUD -->
-        <header class="hud">
-            <div class="hud-left">
-                <button class="icon-btn" id="menuBtn" aria-label="Menu">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-                <div class="counter">
-                    <span id="currentCount" class="count-current">0</span>
-                    <span class="count-separator">/</span>
-                    <span class="count-total" id="totalCount">0</span>
+        <!-- ===================== REVIEW ===================== -->
+        <section class="pj-screen pj-review active" id="screen-review" data-screen="review">
+            <header class="pj-head">
+                <div class="pj-head-l">
+                    <div class="pj-ring" id="pjRing" style="--p:0">
+                        <b id="rvRingPct">0%</b>
+                    </div>
+                    <div class="pj-count">
+                        <span class="pj-count-nums"><span id="currentCount">0</span> / <span id="totalCount"
+                                class="count-total">0</span></span>
+                        <span class="pj-count-sub" id="rvCountSub">0% complete</span>
+                    </div>
                 </div>
-                <button class="stats-btn hint" id="statsBtn" aria-label="View your stats">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round">
-                        <line x1="6" y1="20" x2="6" y2="13"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="18" y1="20" x2="18" y2="9"></line>
-                    </svg>
-                    <span class="stats-btn-label">Stats</span>
-                </button>
-            </div>
-            <div class="hud-right">
-                <button class="decade-badge" id="decadeBadge" aria-haspopup="dialog"
-                    aria-label="Choose which decades to review">
-                    <span id="decadeBadgeLabel">1980s</span>
-                    <svg class="decade-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <button class="icon-btn" id="soundToggleBtn" aria-label="Toggle Sound">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="soundOnIcon">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    </svg>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="soundOffIcon"
-                        class="hidden">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <line x1="23" y1="9" x2="17" y2="15"></line>
-                        <line x1="17" y1="9" x2="23" y2="15"></line>
-                    </svg>
-                </button>
-                <button class="icon-btn" id="shareBtn" aria-label="Share Results">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                        <polyline points="16 6 12 2 8 6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                    </svg>
-                </button>
-            </div>
-        </header>
-
-        <!-- Streak Indicator -->
-        <div class="streak-indicator hidden" id="streakIndicator">
-            <span class="streak-flames"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"
-                    stroke="none">
-                    <path
-                        d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-                </svg></span>
-            <span class="streak-count" id="streakCount">0</span>
-        </div>
-
-        <!-- Card Stack Container -->
-        <main class="card-stack-container">
-            <div class="card-stack" id="cardStack">
-                <!-- Cards will be rendered here by JavaScript -->
-            </div>
-
-            <!-- Loading State -->
-            <div class="loading-state" id="loadingState">
-                <div class="spinner"></div>
-                <p>Loading movies...</p>
-            </div>
-
-            <!-- Completion State -->
-            <div class="completion-state hidden" id="completionState">
-                <div class="completion-icon"><svg viewBox="0 0 24 24" width="64" height="64" fill="none"
-                        stroke="var(--theme-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z" />
-                        <path d="m6.2 5.3 3.1 3.9" />
-                        <path d="m12.4 3.4 3.1 4" />
-                        <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
-                    </svg></div>
-                <h2>Challenge Complete!</h2>
-                <p id="completionStats"></p>
-                <div class="completion-actions">
-                    <button class="btn btn-primary hidden" id="chooseDecadesBtn">Choose Decades</button>
-                    <button class="btn btn-primary" id="shareResultsBtn">Share Results</button>
-                    <button class="btn btn-secondary" id="resetBtn">Start Over</button>
-                </div>
-            </div>
-
-            <!-- Empty Selection State (no decades chosen) -->
-            <div class="empty-selection hidden" id="emptySelectionState">
-                <div class="empty-icon"><svg viewBox="0 0 24 24" width="56" height="56" fill="none"
-                        stroke="var(--theme-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-                        <line x1="7" y1="2" x2="7" y2="22" />
-                        <line x1="17" y1="2" x2="17" y2="22" />
-                        <line x1="2" y1="12" x2="22" y2="12" />
-                    </svg></div>
-                <h2>No decades selected</h2>
-                <p>Choose at least one decade to start reviewing.</p>
-                <button class="btn btn-primary" id="emptyChooseBtn">Choose Decades</button>
-            </div>
-        </main>
-
-        <!-- Action Buttons -->
-        <footer class="action-bar">
-            <span class="action-counter counter-skip" id="notSeenCounter">0</span>
-            <button class="action-btn action-skip" id="skipBtn" aria-label="Haven't Seen">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <button class="action-btn action-undo" id="undoBtn" aria-label="Undo" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
-                    <polyline points="3 10 8 5 3 10 8 15"></polyline>
-                </svg>
-            </button>
-            <button class="action-btn action-seen" id="seenBtn" aria-label="Seen It">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </button>
-            <span class="action-counter counter-seen" id="seenCounter">0</span>
-        </footer>
-
-        <!-- Keyboard Hints (Desktop) -->
-        <div class="keyboard-hints">
-            <span class="hint"><kbd>←</kbd> Haven't Seen</span>
-            <span class="hint"><kbd>Z</kbd> Undo</span>
-            <span class="hint"><kbd>→</kbd> Seen</span>
-        </div>
-
-        <!-- Settings Modal -->
-        <div class="modal-overlay hidden" id="modalOverlay">
-            <div class="modal" id="settingsModal">
-                <div class="modal-header">
-                    <h3>Settings</h3>
-                    <button class="icon-btn" id="closeModalBtn" aria-label="Close">
+                <div class="pj-head-r">
+                    <button class="pj-pill" id="decadeBadge" aria-haspopup="dialog"
+                        aria-label="Choose which decades to review">
+                        <span id="decadeBadgeLabel">All Decades</span>
+                        <svg class="pj-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <button class="pj-iconbtn" data-go="diary" aria-label="Open Movie Diary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <!-- Progress Stats -->
-                    <div class="settings-section">
-                        <h4>Your Progress</h4>
-                        <div class="stats-grid" id="statsGrid">
-                            <div class="stat-item">
-                                <span class="stat-value" id="statSeen">0</span>
-                                <span class="stat-label">Seen</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value" id="statSkipped">0</span>
-                                <span class="stat-label">Haven't Seen</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value" id="statRemaining">0</span>
-                                <span class="stat-label">Remaining</span>
-                            </div>
-                        </div>
-                    </div>
+            </header>
 
-                    <!-- Export/Import -->
-                    <div class="settings-section">
-                        <h4>Backup & Sync</h4>
-                        <p class="section-desc">Save your progress with QR code or sync across devices.</p>
-                        <div class="sync-actions">
-                            <button class="btn btn-primary" id="backupBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                                    height="16">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                    <polyline points="17 21 17 13 7 13 7 21" />
-                                    <polyline points="7 3 7 8 15 8" />
-                                </svg>
-                                Backup
-                            </button>
-                            <button class="btn btn-secondary" id="importBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                                    height="16">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Import Code
-                            </button>
-                        </div>
-                        <details class="advanced-export">
-                            <summary>Advanced: Export as text code</summary>
-                            <button class="btn btn-secondary btn-small" id="exportBtn" style="margin-top: 8px;">
-                                Export Code
-                            </button>
-                        </details>
-                        <textarea class="code-input hidden" id="codeInput"
-                            placeholder="Paste your progress code here..."></textarea>
-                        <div class="code-actions hidden" id="codeActions">
-                            <button class="btn btn-small" id="copyCodeBtn">Copy</button>
-                            <button class="btn btn-small btn-primary" id="applyCodeBtn">Apply</button>
-                        </div>
-                    </div>
+            <!-- Streak Indicator -->
+            <div class="streak-indicator hidden" id="streakIndicator">
+                <span class="streak-flames"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"
+                        stroke="none">
+                        <path
+                            d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                    </svg></span>
+                <span class="streak-count" id="streakCount">0</span>
+            </div>
 
-                    <!-- Reset -->
-                    <div class="settings-section">
-                        <h4>Danger Zone</h4>
-                        <button class="btn btn-danger" id="resetProgressBtn">Reset All Progress</button>
+            <main class="card-stack-container">
+                <div class="pj-deck">
+                    <div class="pj-peek pj-peek-prev" id="peekPrev" aria-hidden="true"></div>
+                    <div class="pj-peek pj-peek-next" id="peekNext" aria-hidden="true"></div>
+                    <div class="card-stack" id="cardStack"><!-- cards rendered by app.js --></div>
+                </div>
+
+                <div class="loading-state" id="loadingState">
+                    <div class="spinner"></div>
+                    <p>Loading movies...</p>
+                </div>
+
+                <!-- Completion State -->
+                <div class="completion-state hidden" id="completionState">
+                    <div class="completion-icon"><svg viewBox="0 0 24 24" width="60" height="60" fill="none"
+                            stroke="var(--pj-seen)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z" />
+                            <path d="m6.2 5.3 3.1 3.9" />
+                            <path d="m12.4 3.4 3.1 4" />
+                            <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+                        </svg></div>
+                    <h2>Challenge Complete!</h2>
+                    <p id="completionStats"></p>
+                    <div class="completion-actions">
+                        <button class="btn btn-primary hidden" id="chooseDecadesBtn">Choose Decades</button>
+                        <button class="btn btn-primary" id="shareResultsBtn">Share Results</button>
+                        <button class="btn btn-secondary" id="resetBtn">Start Over</button>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Decade Picker -->
+                <!-- Empty Selection State -->
+                <div class="empty-selection hidden" id="emptySelectionState">
+                    <div class="empty-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none"
+                            stroke="var(--pj-seen)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                            <line x1="7" y1="2" x2="7" y2="22" />
+                            <line x1="17" y1="2" x2="17" y2="22" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                        </svg></div>
+                    <h2>No decades selected</h2>
+                    <p>Choose at least one decade to start reviewing.</p>
+                    <button class="btn btn-primary" id="emptyChooseBtn">Choose Decades</button>
+                </div>
+            </main>
+
+            <div class="pj-stage-caption">
+                <div class="pj-year" id="rvYear"></div>
+                <div class="pj-hint">Swipe or tap a choice</div>
+            </div>
+
+            <footer class="action-bar pj-actions">
+                <div class="pj-act">
+                    <button class="action-btn action-skip" id="skipBtn" aria-label="Haven't Seen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                            <line x1="2" y1="2" x2="22" y2="22"></line>
+                        </svg>
+                    </button>
+                    <span class="pj-act-label">Haven't Seen</span>
+                    <span class="action-counter counter-skip" id="notSeenCounter" hidden>0</span>
+                </div>
+                <div class="pj-act pj-act-undo">
+                    <button class="action-btn action-undo" id="undoBtn" aria-label="Undo" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
+                            <polyline points="3 10 8 5"></polyline>
+                            <polyline points="3 10 8 15"></polyline>
+                        </svg>
+                    </button>
+                    <span class="pj-act-label">Undo</span>
+                </div>
+                <div class="pj-act">
+                    <button class="action-btn action-seen" id="seenBtn" aria-label="Seen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                    <span class="pj-act-label">Seen</span>
+                    <span class="action-counter counter-seen" id="seenCounter" hidden>0</span>
+                </div>
+            </footer>
+        </section>
+
+        <!-- ===================== DIARY ===================== -->
+        <section class="pj-screen pj-scroll" id="screen-diary" data-screen="diary">
+            <header class="pj-titlebar">
+                <div>
+                    <h1 class="pj-title">Movie Diary</h1>
+                    <p class="pj-subtitle">Your movie journey from 1980–2025</p>
+                </div>
+                <button class="pj-iconbtn" data-go="settings" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </button>
+            </header>
+            <div id="diaryRoot"><!-- rendered by ui-shell.js --></div>
+        </section>
+
+        <!-- ===================== DECADES ===================== -->
+        <section class="pj-screen pj-scroll" id="screen-decades" data-screen="decades">
+            <div id="decadesList">
+                <h1 class="pj-title" style="margin-bottom:14px">Decades</h1>
+                <button class="pj-filter-btn" id="decadeFilterBtn">
+                    <span class="l">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg> Choose decades to review
+                    </span>
+                    <span class="dim" id="decadeFilterSummary">All 5 on</span>
+                </button>
+                <div id="decadesRoot"><!-- rendered by ui-shell.js --></div>
+            </div>
+            <div id="decadeDetail" hidden><!-- rendered by ui-shell.js --></div>
+        </section>
+
+        <!-- ===================== SETTINGS ===================== -->
+        <section class="pj-screen pj-scroll" id="screen-settings" data-screen="settings">
+            <h1 class="pj-title" style="margin-bottom:4px">Settings</h1>
+
+            <div class="pj-set-sec">
+                <h4>Your progress</h4>
+                <div class="stats-grid pj-stat3" id="statsGrid">
+                    <div class="stat-item"><span class="stat-value" id="statSeen">0</span><span
+                            class="stat-label">Seen</span></div>
+                    <div class="stat-item"><span class="stat-value" id="statSkipped">0</span><span
+                            class="stat-label">Haven't Seen</span></div>
+                    <div class="stat-item"><span class="stat-value" id="statRemaining">0</span><span
+                            class="stat-label">Remaining</span></div>
+                </div>
+            </div>
+
+            <div class="pj-set-sec">
+                <h4>Preferences</h4>
+                <button class="pj-set-row" id="soundToggleBtn" aria-label="Toggle Sound">
+                    <span class="l">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="soundOnIcon">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="soundOffIcon"
+                            class="hidden">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <line x1="23" y1="9" x2="17" y2="15"></line>
+                            <line x1="17" y1="9" x2="23" y2="15"></line>
+                        </svg>
+                        Sound effects
+                    </span>
+                    <span class="pj-set-hint">Tap to toggle</span>
+                </button>
+            </div>
+
+            <div class="pj-set-sec">
+                <h4>Backup &amp; sync</h4>
+                <p class="section-desc">Save your progress with a QR code or sync across devices.</p>
+                <button class="btn btn-primary pj-wide" id="backupBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                    </svg> Backup (QR code)
+                </button>
+                <button class="btn btn-secondary pj-wide" id="importBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg> Import code
+                </button>
+                <button class="btn btn-secondary pj-wide" id="shareBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg> Share results
+                </button>
+                <details class="advanced-export">
+                    <summary>Advanced: export as text code</summary>
+                    <button class="btn btn-secondary btn-small" id="exportBtn" style="margin-top:8px;">Export
+                        Code</button>
+                </details>
+                <textarea class="code-input hidden" id="codeInput"
+                    placeholder="Paste your progress code here..."></textarea>
+                <div class="code-actions hidden" id="codeActions">
+                    <button class="btn btn-small" id="copyCodeBtn">Copy</button>
+                    <button class="btn btn-small btn-primary" id="applyCodeBtn">Apply</button>
+                </div>
+            </div>
+
+            <div class="pj-set-sec">
+                <h4>Danger zone</h4>
+                <button class="btn btn-danger pj-wide" id="resetProgressBtn">Reset all progress</button>
+            </div>
+            <p class="pj-version">Poster Journal · v3.4.0</p>
+        </section>
+
+        <!-- ===================== BOTTOM NAV ===================== -->
+        <nav class="pj-nav" id="pjNav">
+            <button data-go="review" class="active" aria-label="Review">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 7h20v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"></path>
+                    <path d="m2 7 4-5h12l4 5"></path>
+                    <line x1="7" y1="2" x2="9" y2="7"></line>
+                    <line x1="13" y1="2" x2="15" y2="7"></line>
+                </svg><span>Review</span>
+            </button>
+            <button data-go="diary" aria-label="Diary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg><span>Diary</span>
+            </button>
+            <button data-go="decades" aria-label="Decades">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg><span>Decades</span>
+            </button>
+            <button data-go="settings" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg><span>Settings</span>
+            </button>
+        </nav>
+
+        <!-- ===================== Decade Picker (filter) ===================== -->
         <div class="modal-overlay hidden" id="decadeOverlay">
             <div class="modal decade-picker" id="decadePicker">
                 <div class="modal-header">
@@ -259,7 +325,7 @@
                 <div class="modal-body">
                     <p class="section-desc">Turn a decade on or off. Your cards come only from the decades that are on.
                     </p>
-                    <div class="decade-list" id="decadeList"><!-- rows injected by app.js --></div>
+                    <div class="decade-list" id="decadeList"></div>
                     <div class="decade-picker-actions">
                         <button class="btn btn-secondary btn-small" id="decadeAllBtn">All</button>
                         <button class="btn btn-secondary btn-small" id="decadeNoneBtn">None</button>
@@ -269,62 +335,16 @@
             </div>
         </div>
 
-        <!-- Stats Screen -->
-        <div class="modal-overlay hidden" id="statsOverlay">
-            <div class="modal stats-modal" id="statsModal">
-                <div class="modal-header">
-                    <h3>Your Stats</h3>
-                    <button class="icon-btn" id="closeStatsBtn" aria-label="Close">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="settings-section">
-                        <h4>Overview</h4>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-value" id="statsTotalSeen">0</span>
-                                <span class="stat-label">Seen</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value" id="statsTotalRated">0</span>
-                                <span class="stat-label">Rated</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value" id="statsPctSeen">0%</span>
-                                <span class="stat-label" id="statsPctLabel">Of all</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="settings-section">
-                        <h4>Seen by decade</h4>
-                        <div class="stat-bars" id="statsByDecade"><!-- injected --></div>
-                    </div>
-                    <div class="settings-section">
-                        <h4>Most-watched years</h4>
-                        <div class="stat-bars" id="statsTopYears"><!-- injected --></div>
-                        <p class="section-desc stats-empty hidden" id="statsYearsEmpty">Mark some movies as seen to see
-                            your top years.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Backup Modal -->
+        <!-- ===================== Backup Modal ===================== -->
         <div class="modal hidden" id="backupModal">
             <div class="backup-overlay"></div>
             <div class="modal-content backup-modal">
                 <button class="modal-close" id="closeBackupModal" aria-label="Close">×</button>
                 <h2>Backup Your Progress</h2>
-
                 <div class="qr-container">
                     <div id="qrCode"></div>
                     <p class="qr-hint">Screenshot this QR code to save</p>
                 </div>
-
                 <div class="share-options">
                     <p class="share-label">Or share via:</p>
                     <div class="share-buttons">
@@ -333,15 +353,13 @@
                                     stroke="currentColor" stroke-width="2">
                                     <rect x="2" y="4" width="20" height="16" rx="2" />
                                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                                </svg></span>
-                            <span class="share-text">Email</span>
+                                </svg></span><span class="share-text">Email</span>
                         </button>
                         <button class="share-btn" id="shareSMS" title="Text to self">
                             <span class="share-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none"
                                     stroke="currentColor" stroke-width="2">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                </svg></span>
-                            <span class="share-text">Text</span>
+                                </svg></span><span class="share-text">Text</span>
                         </button>
                         <button class="share-btn" id="shareDownload" title="Download file">
                             <span class="share-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none"
@@ -349,27 +367,29 @@
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg></span>
-                            <span class="share-text">File</span>
+                                </svg></span><span class="share-text">File</span>
                         </button>
                         <button class="share-btn" id="shareLink" title="Copy link">
                             <span class="share-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none"
                                     stroke="currentColor" stroke-width="2">
                                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                </svg></span>
-                            <span class="share-text">Link</span>
+                                </svg></span><span class="share-text">Link</span>
                         </button>
                     </div>
                 </div>
-
                 <div class="backup-footer">
                     <p class="backup-note">Your progress: <strong id="backupProgressCount">0</strong> movies rated</p>
                 </div>
             </div>
         </div>
 
-        <!-- Toast Notification -->
+        <!-- Vestigial elements kept so the engine's listeners bind safely -->
+        <button id="menuBtn" hidden aria-hidden="true"></button>
+        <button id="closeModalBtn" hidden aria-hidden="true"></button>
+        <div id="modalOverlay" class="hidden" hidden></div>
+
+        <!-- Toast -->
         <div class="toast hidden" id="toast"></div>
     </div>
 
@@ -377,27 +397,30 @@
     <script src="js/lib/lz-string.min.js"></script>
     <script src="js/lib/qrcode.min.js"></script>
 
-    <!-- Configuration (load first) -->
-    <script src="config/challenge.config.js?v=29"></script>
-    <script src="js/core/config-loader.js?v=29"></script>
+    <!-- Configuration -->
+    <script src="config/challenge.config.js?v=35"></script>
+    <script src="js/core/config-loader.js?v=35"></script>
 
-    <!-- Static content data (year transition card) -->
-    <script src="data/year-facts.js?v=29"></script>
+    <!-- Static content data -->
+    <script src="data/year-facts.js?v=35"></script>
 
-    <!-- Core modules (data now loads asynchronously via data-loader) -->
-    <script src="js/core/data-loader.js?v=29"></script>
-    <script src="js/core/item-manager.js?v=29"></script>
-    <script src="js/sliding-window.js?v=29"></script>
-    <script src="js/storage.js?v=29"></script>
+    <!-- Core modules -->
+    <script src="js/core/data-loader.js?v=35"></script>
+    <script src="js/core/item-manager.js?v=35"></script>
+    <script src="js/sliding-window.js?v=35"></script>
+    <script src="js/storage.js?v=35"></script>
 
     <!-- Feature modules -->
-    <script src="js/audio-manager.js?v=29"></script>
-    <script src="js/theme-manager.js?v=29"></script>
-    <script src="js/gamification.js?v=29"></script>
-    <script src="js/stats-engine.js?v=29"></script>
+    <script src="js/audio-manager.js?v=35"></script>
+    <script src="js/theme-manager.js?v=35"></script>
+    <script src="js/gamification.js?v=35"></script>
+    <script src="js/stats-engine.js?v=35"></script>
 
     <!-- Main application -->
-    <script src="js/app.js?v=29"></script>
+    <script src="js/app.js?v=35"></script>
+
+    <!-- Poster Journal UI shell (v3.4): bottom-nav tabs, Diary, Decades, ring/peeks -->
+    <script src="js/ui-shell.js?v=35"></script>
 </body>
 
 </html>

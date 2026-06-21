@@ -56,8 +56,12 @@ via the existing `setActiveEras()` path.
 ### Notes / Limitations
 - `DataLoader.ASSET_VERSION` stays **27** (no data/chunk change); only the app-asset `?v=`
   is bumped to 30 on the new page.
-- Shipped first as a **preview URL** (`index.v34.html`) alongside the unchanged live
-  `index.html`; promotion to the default page is a follow-up one-line swap.
+- Shipped as a **preview URL** (`index.v34.html`) first, then **promoted to the default
+  `index.html`** (approved). `index.v34.html` is kept as an identical alias so existing
+  preview links keep working; consolidate to a single file in a later edit pass.
+- **Open follow-up (deferred):** card-to-card motion could be smoother/snappier — the
+  current model waits for a fly-off timer before rendering the next card; a future pass
+  could render the next card instantly and slide the old one off on top.
 - Visual/pixel polish (exact spacing, side-peek motion, ambient intensity, small-phone
   contrast) is best confirmed in a real browser — logic and DOM wiring are covered by the
   tests above; HTML could not be rasterised in the build sandbox.
