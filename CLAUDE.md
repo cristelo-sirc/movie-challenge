@@ -89,6 +89,21 @@ Preview asset cache-bust bumped `v=30`→`v=31`.
 - Verified: 26-check boot harness + a 4-step stat-drop arming test + node --check, all clean.
   Preview cache-bust `v=31`→`v=32`. (app.js changes are shared but improve the legacy page identically.)
 
+### Follow-up — Swipe removed + scrollable info card + stricter moment dismissal
+- **Swipe-to-rate removed app-wide.** `renderCards` no longer attaches drag listeners
+  (the handlers remain as dead code). Rating is via the Seen/Haven't-Seen/Undo buttons
+  (and keys). This frees the flipped info card to scroll and removes the document-level
+  touchmove work — a perf win the user could feel.
+- **Info card scrolls.** `body[data-pj] .card-back` is now `overflow-y:auto` + `touch-action:pan-y`
+  (was clipped/centered); the synopsis truncation (300 chars) was removed so the full
+  overview shows and scrolls. Tap (no drag) still flips back.
+- **Stat drop & year takeover dismiss ONLY via their "Tap to continue" control** (now a real
+  button), not a tap anywhere — so stray taps/scroll can't close them. Still armed-gated +
+  no auto-dismiss. Year hint reworded "Tap anywhere"→"Tap to continue".
+- Verified: 26-check boot harness + no-drag/full-synopsis/hint-only-dismiss checks +
+  node --check, all clean. Cache-bust `v=32`→`v=33`. (Swipe removal/scroll fixes are scoped
+  to the new page via `body[data-pj]`; the app.js no-drag change is shared but harmless on legacy.)
+
 ## Session: Decade Selection + Stats Screen (Jun 2026) — v3.3.0
 
 ### Overview

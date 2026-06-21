@@ -317,3 +317,20 @@ body[data-pj] .stat-drop .stat-drop-hint,
 body[data-pj] .decade-takeover .dt-hint{ opacity:0; transition:opacity .35s ease; }
 body[data-pj] .stat-drop.armed .stat-drop-hint,
 body[data-pj] .decade-takeover.armed .dt-hint{ opacity:1; }
+
+/* ---- Info card scrolls natively (swipe-to-rate removed) ---- */
+body[data-pj] .movie-card{ touch-action:auto; cursor:default; }
+body[data-pj] .card-back{ justify-content:flex-start; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; }
+body[data-pj] .card-back-overview{ overflow:visible; flex-grow:0;
+  -webkit-mask-image:none; mask-image:none; }
+body[data-pj] .dt-inner.dt-year{ touch-action:pan-y; }
+
+/* ---- "Tap to continue" = the only dismiss target, styled as a real button ---- */
+body[data-pj] .stat-drop-hint,
+body[data-pj] .decade-takeover .dt-hint{
+  display:inline-block; margin-top:18px; padding:11px 24px; border-radius:999px;
+  border:1px solid var(--pj-line-2); background:var(--pj-bg-2); color:var(--pj-tx-0);
+  font:600 12.5px/1 'Inter',sans-serif; letter-spacing:.02em; text-transform:none; cursor:pointer; }
+body[data-pj] .stat-drop-hint:active,
+body[data-pj] .decade-takeover .dt-hint:active{ transform:scale(.96); }

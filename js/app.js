@@ -203,7 +203,10 @@
             overlay.classList.add('closing');
             setTimeout(() => overlay.remove(), 250);
         };
-        overlay.addEventListener('click', dismiss);
+        // Dismiss ONLY via the "Tap to continue" control — taps elsewhere do nothing,
+        // so a stray tap can't close it.
+        const hint = overlay.querySelector('.stat-drop-hint');
+        if (hint) hint.addEventListener('click', dismiss);
     }
 
     /**
@@ -610,7 +613,7 @@
                 <h1>${year}</h1>
                 ${factsHtml}
                 ${quoteHtml}
-                <div class="dt-hint">Tap anywhere to continue</div>
+                <div class="dt-hint">Tap to continue</div>
             </div>
         `;
         document.body.appendChild(takeover);
@@ -624,7 +627,10 @@
             takeover.classList.add('closing');
             setTimeout(() => takeover.remove(), 350);
         };
-        takeover.addEventListener('click', dismiss);
+        // Dismiss ONLY via the "Tap to continue" control so reading/scrolling the
+        // facts can't accidentally close it.
+        const dtHint = takeover.querySelector('.dt-hint');
+        if (dtHint) dtHint.addEventListener('click', dismiss);
     }
 
     /**
@@ -688,9 +694,8 @@
 
         // Attach drag listeners to top card (First Child)
         const topCard = elements.cardStack.firstElementChild;
-        if (topCard) {
-            attachDragListeners(topCard);
-        }
+        // v3.4: swipe-to-rate removed — rating is via the buttons (and keys) only.
+        // This lets the flipped info card scroll natively and trims per-touch work.
 
         // Iconic entrance effect (rate-limited, once per movie)
         const top = movies[0];
@@ -725,7 +730,7 @@
 
         // Truncate overview for display on back
         const overview = movie.overview || 'No description available.';
-        const truncatedOverview = overview.length > 300 ? overview.substring(0, 297) + '...' : overview;
+        const truncatedOverview = overview; // v3.4: full synopsis — the info card scrolls
 
         // Extract metadata (handle both flat and nested structures)
         const director = movie.director || (movie.credits && movie.credits.director);
