@@ -107,6 +107,13 @@ Preview asset cache-bust bumped `v=30`→`v=31`.
   node --check, all clean. Cache-bust `v=32`→`v=33`. (Swipe removal/scroll fixes are scoped
   to the new page via `body[data-pj]`; the app.js no-drag change is shared but harmless on legacy.)
 
+### Follow-up — Faster card turnover
+The next card now renders **160ms** after a Seen/Haven't-Seen tap (was 300ms) on the Poster
+Journal page, with the fly-off animation shortened to match (`0.4s`→`0.18s`, scoped to
+`body[data-pj]`). Root cause was a deliberate timer paired to the swipe-off animation;
+`StorageManager.save` is already debounced (500ms) and the card render is cheap, so neither
+was touched (would not move the needle). Legacy page keeps its 300ms/0.4s. Cache-bust `v=34`→`v=35`.
+
 ## Session: Decade Selection + Stats Screen (Jun 2026) — v3.3.0
 
 ### Overview

@@ -1821,13 +1821,17 @@ ${baseUrl}`;
             handleSkipAction();
         }
 
+        // v3.4: the next card renders after this delay (paired with the fly-off
+        // animation). The Poster Journal page uses a snappier 160ms; the legacy
+        // page keeps its original 300ms (its animation is still 0.4s).
+        const advanceDelay = document.body.hasAttribute('data-pj') ? 160 : 300;
         setTimeout(() => {
             if (direction === 'right') {
                 SlidingWindow.markSeen();
             } else {
                 SlidingWindow.markNotSeen();
             }
-        }, 300);
+        }, advanceDelay);
     }
 
     /**

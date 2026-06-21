@@ -343,3 +343,7 @@ body[data-pj] .decade-takeover .dt-hint{
   font:600 12.5px/1 'Inter',sans-serif; letter-spacing:.02em; text-transform:none; cursor:pointer; }
 body[data-pj] .stat-drop-hint:active,
 body[data-pj] .decade-takeover .dt-hint:active{ transform:scale(.96); }
+
+/* ---- Snappier card turnover: fly-off matches the 160ms advance (see app.js) ---- */
+body[data-pj] .movie-card.swipe-right{ animation:swipeRight .18s var(--ease-out-expo) forwards; }
+body[data-pj] .movie-card.swipe-left{ animation:swipeLeft .18s var(--ease-out-expo) forwards; }
