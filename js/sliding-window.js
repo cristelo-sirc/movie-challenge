@@ -17,6 +17,7 @@ const SlidingWindow = (function () {
     let currentIndex = 0;            // Current position in the list
     let seenSet = new Set();         // Fast lookup for seen items
     let notSeenSet = new Set();      // Fast lookup for not-seen items
+    let watchlistSet = new Set();    // v3.5: "Want to See" item IDs (insertion order)
     let history = [];                // Action history for undo
 
     // ===== Decade filtering (v3.3) =====
@@ -71,6 +72,7 @@ const SlidingWindow = (function () {
         currentIndex = savedState.currentIndex || 0;
         seenSet = new Set(savedState.seen || []);
         notSeenSet = new Set(savedState.notSeen || []);
+        watchlistSet = new Set(savedState.watchlist || []); // v3.5
         history = savedState.history || [];
 
         onUpdate = callbacks.onUpdate || (() => { });
@@ -364,8 +366,41 @@ const SlidingWindow = (function () {
             seen: Array.from(seenSet),
             notSeen: Array.from(notSeenSet),
             history: history.slice(), // Copy
-            activeEras: Array.from(activeEras) // v3.3: remember decade selection
+            activeEras: Array.from(activeEras), // v3.3: remember decade selection
+            watchlist: Array.from(watchlistSet) // v3.5: "Want to See" list
         };
+    }
+
+    /**
+     * v3.5 — "Want to See" watchlist (local only; never part of share/QR codes).
+     * Independent of seen/notSeen: a movie can be watchlisted whether or not it
+     * has been rated. Order is insertion order (Set preserves it).
+     */
+    function isWatchlisted(id) {
+        return watchlistSet.has(id);
+    }
+
+    /**
+     * Toggle a movie's watchlist membership.
+     * @param {number|string} id
+     * @returns {boolean} the new state (true = now on the list)
+     */
+    function toggleWatchlist(id) {
+        if (id == null) return false;
+        if (watchlistSet.has(id)) {
+            watchlistSet.delete(id);
+            return false;
+        }
+        watchlistSet.add(id);
+        return true;
+    }
+
+    /**
+     * The watchlist as an array of IDs (insertion order, oldest first).
+     * @returns {Array}
+     */
+    function getWatchlist() {
+        return Array.from(watchlistSet);
     }
 
     /**
@@ -485,6 +520,7 @@ const SlidingWindow = (function () {
         currentIndex = 0;
         seenSet.clear();
         notSeenSet.clear();
+        watchlistSet.clear(); // v3.5: a full progress reset also clears the watchlist
         history = [];
         // Back to the default: every decade selected
         activeEras = new Set(allEraIds);
@@ -528,6 +564,9 @@ const SlidingWindow = (function () {
         setActiveEras,    // v3.3: change decade selection
         getActiveEras,    // v3.3
         isAllComplete,    // v3.3: every decade fully rated
+        isWatchlisted,    // v3.5: "Want to See" membership
+        toggleWatchlist,  // v3.5: add/remove from watchlist
+        getWatchlist,     // v3.5: list of watchlisted IDs
         reset,
         isComplete,
         get historyLength() { return history.length; }

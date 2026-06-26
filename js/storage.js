@@ -33,6 +33,7 @@ const StorageManager = (function () {
         notSeen: [],        // Array of movie IDs marked as not seen
         history: [],        // Last N actions for undo (stores {id, action} objects)
         activeEras: null,   // v3.3: decade selection (null = all decades)
+        watchlist: [],      // v3.5: "Want to See" movie IDs (local only, not in share/QR)
         lastUpdated: null,
         version: 1
     };

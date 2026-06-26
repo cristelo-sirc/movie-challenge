@@ -13,8 +13,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=35">
-    <link rel="stylesheet" href="styles.v34.css?v=35">
+    <link rel="stylesheet" href="styles.css?v=36">
+    <link rel="stylesheet" href="styles.v34.css?v=36">
 </head>
 
 <body data-pj="1">
@@ -228,6 +228,22 @@
             </div>
 
             <div class="pj-set-sec">
+                <h4>Where to watch</h4>
+                <p class="section-desc">Streaming availability is shown on each movie's info side and your Want&nbsp;to&nbsp;See list.</p>
+                <div class="pj-set-row pj-set-static">
+                    <span class="l">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                        Region
+                    </span>
+                    <span class="pj-set-hint">United States</span>
+                </div>
+                <p class="pj-strm-credit" style="margin-top:10px">Streaming data by JustWatch via TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+            </div>
+
+            <div class="pj-set-sec">
                 <h4>Backup &amp; sync</h4>
                 <p class="section-desc">Save your progress with a QR code or sync across devices.</p>
                 <button class="btn btn-primary pj-wide" id="backupBtn">
@@ -271,7 +287,7 @@
                 <h4>Danger zone</h4>
                 <button class="btn btn-danger pj-wide" id="resetProgressBtn">Reset all progress</button>
             </div>
-            <p class="pj-version">Poster Journal · v3.4.0</p>
+            <p class="pj-version">Poster Journal · v3.5.0</p>
         </section>
 
         <!-- ===================== BOTTOM NAV ===================== -->
@@ -398,29 +414,30 @@
     <script src="js/lib/qrcode.min.js"></script>
 
     <!-- Configuration -->
-    <script src="config/challenge.config.js?v=35"></script>
-    <script src="js/core/config-loader.js?v=35"></script>
+    <script src="config/challenge.config.js?v=36"></script>
+    <script src="js/core/config-loader.js?v=36"></script>
 
     <!-- Static content data -->
-    <script src="data/year-facts.js?v=35"></script>
+    <script src="data/year-facts.js?v=36"></script>
 
     <!-- Core modules -->
-    <script src="js/core/data-loader.js?v=35"></script>
-    <script src="js/core/item-manager.js?v=35"></script>
-    <script src="js/sliding-window.js?v=35"></script>
-    <script src="js/storage.js?v=35"></script>
+    <script src="js/core/data-loader.js?v=36"></script>
+    <script src="js/core/item-manager.js?v=36"></script>
+    <script src="js/sliding-window.js?v=36"></script>
+    <script src="js/storage.js?v=36"></script>
 
     <!-- Feature modules -->
-    <script src="js/audio-manager.js?v=35"></script>
-    <script src="js/theme-manager.js?v=35"></script>
-    <script src="js/gamification.js?v=35"></script>
-    <script src="js/stats-engine.js?v=35"></script>
+    <script src="js/audio-manager.js?v=36"></script>
+    <script src="js/theme-manager.js?v=36"></script>
+    <script src="js/gamification.js?v=36"></script>
+    <script src="js/stats-engine.js?v=36"></script>
+    <script src="js/streaming.js?v=36"></script>
 
     <!-- Main application -->
-    <script src="js/app.js?v=35"></script>
+    <script src="js/app.js?v=36"></script>
 
     <!-- Poster Journal UI shell (v3.4): bottom-nav tabs, Diary, Decades, ring/peeks -->
-    <script src="js/ui-shell.js?v=35"></script>
+    <script src="js/ui-shell.js?v=36"></script>
 </body>
 
 </html>

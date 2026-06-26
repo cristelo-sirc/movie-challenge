@@ -194,7 +194,65 @@ const UIShell = (function () {
         <div class="pj-tl-axis"><span>1980</span><span>2025</span></div>
       </div>
       <div class="pj-kicker muted" style="margin:18px 0 8px">By decade</div>
-      <div class="pj-chapters">${chapters}</div>`;
+      <div class="pj-chapters">${chapters}</div>` + watchlistHTML();
+
+        wireWatchlist(root);
+    }
+
+    // ---- "Want to See" watchlist (v3.5) ------------------------------------
+    function watchlistHTML() {
+        const ids = (typeof SlidingWindow !== 'undefined' && SlidingWindow.getWatchlist)
+            ? SlidingWindow.getWatchlist() : [];
+        const st = state(), seenSet = new Set(st.seen);
+        const ordered = ids.slice().reverse(); // newest first
+
+        const rows = ordered.map(id => {
+            const m = (typeof ItemManager !== 'undefined') ? ItemManager.getById(id) : null;
+            if (!m) return '';
+            const title = (typeof ItemManager !== 'undefined' && ItemManager.getTitle) ? ItemManager.getTitle(m) : (m.title || '');
+            const seenTag = seenSet.has(id) ? '<span class="pj-wl-seen">Seen ✓</span>' : '';
+            const strm = (typeof Streaming !== 'undefined' && Streaming.renderRowHTML) ? Streaming.renderRowHTML(id) : '';
+            return `<div class="pj-wl-row">
+        <span class="pj-wl-thumb">${imgTag(m, 'w92')}</span>
+        <span class="pj-wl-info">
+          <span class="pj-wl-title">${esc(title)}</span>
+          <span class="pj-wl-sub">${esc(m.year || '')}${seenTag}</span>
+          ${strm}
+        </span>
+        <button class="pj-wl-remove" data-id="${esc(id)}" aria-label="Remove ${esc(title)} from Want to See">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+        }).join('');
+
+        const count = ordered.length;
+        const body = count
+            ? `<div class="pj-wl-list">${rows}</div>`
+            : `<div class="pj-wl-empty">
+           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+           <p>Tap the bookmark on any movie in <b>Review</b> to save films you want to watch.</p>
+         </div>`;
+
+        return `<div class="pj-kicker muted pj-wl-k" style="margin:20px 0 8px">Want to See${count ? ` <span class="pj-wl-count">${count}</span>` : ''}</div>
+      <div class="pj-card pj-wl">${body}</div>`;
+    }
+
+    function wireWatchlist(root) {
+        if (!root) return;
+        root.querySelectorAll('.pj-wl-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const raw = btn.getAttribute('data-id');
+                const id = /^\d+$/.test(raw) ? Number(raw) : raw; // ids are numeric TMDB ids
+                if (window.AppBridge && AppBridge.toggleWatchlist) AppBridge.toggleWatchlist(id);
+                else if (typeof SlidingWindow !== 'undefined' && SlidingWindow.toggleWatchlist) SlidingWindow.toggleWatchlist(id);
+                renderDiary();
+            });
+        });
+    }
+
+    // Called by app.js when a bookmark is toggled on the Review screen.
+    function onWatchlistChange() {
+        if (activeScreen === 'diary') renderDiary();
     }
 
     function lerpColor(t) {
@@ -400,12 +458,17 @@ const UIShell = (function () {
         // ensure the initial highlight matches the visible screen
         switchTo('review');
         if (lastData) updateReview(lastData);
+        // v3.5: when streaming data lands, refresh the Diary so watchlist rows
+        // upgrade from "Where to watch" links to provider summaries.
+        if (typeof Streaming !== 'undefined' && Streaming.onReady) {
+            Streaming.onReady(() => { if (activeScreen === 'diary') renderDiary(); });
+        }
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    return { onAppUpdate, switchTo, _renderDiary: renderDiary, _renderDecades: renderDecades };
+    return { onAppUpdate, switchTo, onWatchlistChange, _renderDiary: renderDiary, _renderDecades: renderDecades };
 })();
 
 if (typeof window !== 'undefined') window.UIShell = UIShell;

@@ -2,6 +2,61 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Streaming availability + "Want to See" watchlist (Jun 2026) — v3.5.0
+
+### Overview
+Two additive features on the Poster Journal page (`index.v34.html`), built on top
+of the live v3.4.0 code (local was 8 commits behind at the start of the session;
+reset to `origin/main` first, then v3.5 re-applied cleanly):
+1. **Where to watch** — US streaming availability on each movie's info side and
+   on watchlist rows, split honestly into **Subscription / Free / Rent / Buy**.
+2. **"Want to See" watchlist** — a one-tap poster **bookmark** on the Review
+   screen and a **Want to See** section in the Movie Diary.
+
+### How streaming works (key design decision)
+Data is **pre-fetched at build time, never live in the browser**, so no API key
+ships to the client. A daily GitHub Action (`.github/workflows/refresh-streaming.yml`)
+runs `.github/refresh-streaming.js`, which reads the TMDB key from the encrypted repo
+secret **`TMDB_KEY`**, hits `/movie/{id}/watch/providers` (US, JustWatch-powered) for
+every movie, and commits `data/streaming-us.json`. That commit triggers the Pages
+deploy, so the live app self-updates.
+- `js/streaming.js` lazy-loads the baked data and **always has a working fallback**:
+  a movie with no entry links to the live TMDB watch page. Works even with `{}`.
+- Region fixed to **US**; TMDB/JustWatch credit shown.
+- **Setup (one-time):** add repo secret `TMDB_KEY`; run the Action on demand to
+  populate pills immediately.
+- NOTE: the CI script is at `.github/refresh-streaming.js`, NOT under any `scripts/`
+  folder — `.gitignore` excludes `scripts/`, which would have hidden it from the repo.
+
+### How the watchlist works
+- New `watchlist: []` in storage `defaultState`; `SlidingWindow` gains
+  `isWatchlisted/toggleWatchlist/getWatchlist`, persists via `StorageManager.save`,
+  `watchlist` in `getState()`, cleared on reset. NOT in the share/QR bit-array.
+- Poster **bookmark** (front, top-left) mirrors `info-btn` (stopPropagation, top-card
+  only); never drags/flips/rates/advances. Diary **Want to See** section in `ui-shell.js`;
+  removes route through `AppBridge.toggleWatchlist(id)`.
+
+### Files
+| File | Change |
+|------|--------|
+| `js/storage.js` | **+** `watchlist:[]` in `defaultState`. |
+| `js/sliding-window.js` | **+** watchlist set + methods; `watchlist` in `getState()`; cleared in `reset()`. |
+| `js/app.js` | **+** poster bookmark + `toggleWatchlist()`; streaming container via `Streaming.renderInto`; `AppBridge.isWatchlisted/toggleWatchlist`. |
+| `js/ui-shell.js` | **+** Diary "Want to See" section, `onWatchlistChange`, `Streaming.onReady`. |
+| `js/streaming.js` | **New.** Subscription/Free/Rent/Buy + credit; live-TMDB fallback. |
+| `.github/refresh-streaming.js` | **New.** US watch-providers fetch → `data/streaming-us.json`. |
+| `.github/workflows/refresh-streaming.yml` | **New.** Daily cron + manual run. |
+| `data/streaming-us.json` | **New.** Ships `{}`; populated by the Action. |
+| `index.v34.html` | **+** `streaming.js`; Settings "Where to watch"; cache-bust `v=35→36`; v3.5.0. |
+| `styles.v34.css` | **+** bookmark, streaming block, Want-to-See list. |
+
+### Validation
+- `node --check` clean; JSON valid; YAML parses.
+- JSDOM harness (31 checks): watchlist add/remove/persist, no rate/advance, Diary list +
+  empty state, streaming category split + fallback + credit, share code excludes watchlist,
+  old saves load, legacy `index.html` boots, Decades/Settings unaffected.
+- Bake-script parser unit-checked (priority sort, ads→free, de-dupe, rent-only stays Rent).
+
 ## Session: Poster Journal UI overhaul (Jun 2026) — v3.4.0
 
 ### Overview

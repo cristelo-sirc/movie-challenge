@@ -736,6 +736,10 @@
         const director = movie.director || (movie.credits && movie.credits.director);
         const cast = movie.cast || (movie.credits && movie.credits.cast);
 
+        // v3.5: is this movie already on the "Want to See" list?
+        const isSaved = (typeof SlidingWindow !== 'undefined' && SlidingWindow.isWatchlisted)
+            ? SlidingWindow.isWatchlisted(movie.id) : false;
+
         card.innerHTML = `
             <div class="card-inner">
                 <div class="card-front">
@@ -752,6 +756,12 @@
                     </div>
                     
                     <button class="info-btn" aria-label="More Info">Info</button>
+
+                    <button class="pj-bookmark${isSaved ? ' is-saved' : ''}" aria-label="Save to Want to See" aria-pressed="${isSaved ? 'true' : 'false'}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
 
                     <div class="swipe-indicator seen">SEEN</div>
                     <div class="swipe-indicator skip">NOPE</div>
@@ -778,7 +788,9 @@
                 </div>` : ''}
 
                 <div class="card-back-overview">${escapeHtml(truncatedOverview)}</div>
-                
+
+                <div class="card-streaming" data-stream-id="${movie.id}"></div>
+
                 <div class="card-back-footer">
                     Tap to flip back
                 </div>
@@ -810,9 +822,55 @@
                     card.classList.remove('flipped');
                 });
             }
+
+            // v3.5: bookmark ("Want to See") — a quick tap that saves WITHOUT
+            // rating or advancing the card. Mirrors the info-btn pattern so a
+            // touch here never starts a drag or flips the card.
+            const bookmarkBtn = card.querySelector('.pj-bookmark');
+            if (bookmarkBtn) {
+                const stopProp = (e) => e.stopPropagation();
+                bookmarkBtn.addEventListener('mousedown', stopProp);
+                bookmarkBtn.addEventListener('touchstart', stopProp, { passive: true });
+                bookmarkBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleWatchlist(movie, bookmarkBtn);
+                });
+            }
+
+            // v3.5: fill the streaming ("Where to watch") block on the info side.
+            const streamEl = card.querySelector('.card-streaming');
+            if (streamEl) {
+                // taps inside the streaming block (e.g. a provider link) must not
+                // bubble up and flip the card back
+                streamEl.addEventListener('click', (e) => e.stopPropagation());
+                if (window.Streaming && typeof Streaming.renderInto === 'function') {
+                    Streaming.renderInto(streamEl, movie.id);
+                }
+            }
         }
 
         return card;
+    }
+
+    /**
+     * v3.5 — Toggle a movie on/off the "Want to See" watchlist from the poster
+     * bookmark. Saves locally (never touches the share/QR format) and refreshes
+     * the Diary list if the shell is present. Does NOT rate or advance the card.
+     */
+    function toggleWatchlist(movie, btn) {
+        if (typeof SlidingWindow === 'undefined' || !SlidingWindow.toggleWatchlist) return;
+        const nowSaved = SlidingWindow.toggleWatchlist(movie.id);
+        if (btn) {
+            btn.classList.toggle('is-saved', nowSaved);
+            btn.setAttribute('aria-pressed', nowSaved ? 'true' : 'false');
+        }
+        vibrate(10);
+        StorageManager.save(SlidingWindow.getState());
+        showToast(nowSaved ? 'Added to Want to See' : 'Removed from Want to See', 'success');
+        if (window.UIShell && typeof UIShell.onWatchlistChange === 'function') {
+            try { UIShell.onWatchlistChange(); } catch (e) { /* shell render must never break review */ }
+        }
     }
 
     /**
@@ -1928,6 +1986,18 @@ ${baseUrl}`;
     // path — it does NOT change persistence or share semantics.
     window.AppBridge = {
         openDecadePicker: function () { openDecadePicker(); },
+        // v3.5: watchlist writes routed through app.js so the render-only shell
+        // never persists state itself. Returns the new membership state.
+        isWatchlisted: function (id) {
+            return (typeof SlidingWindow !== 'undefined' && SlidingWindow.isWatchlisted)
+                ? SlidingWindow.isWatchlisted(id) : false;
+        },
+        toggleWatchlist: function (id) {
+            if (typeof SlidingWindow === 'undefined' || !SlidingWindow.toggleWatchlist) return false;
+            const nowSaved = SlidingWindow.toggleWatchlist(id);
+            StorageManager.save(SlidingWindow.getState());
+            return nowSaved;
+        },
         reviewDecade: function (eraId) {
             if (typeof SlidingWindow === 'undefined' || !eraId) return;
             suppressYearCardOnce = true;
