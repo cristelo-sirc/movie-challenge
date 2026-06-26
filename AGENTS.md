@@ -2,6 +2,22 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: "Watch" button + dedicated streaming panel (Jun 2026) — v3.6.0
+
+- **New "Watch" pill** (play icon + label) on the poster front, top-center,
+  between Save (left) and Info (right).
+- **Card-back is two faces:** `.card-back-info` (synopsis/cast/rating — streaming
+  removed) and `.card-back-watch` (streaming). Info tap clears `.show-watch` +
+  flips; Watch tap adds `.show-watch` + flips; CSS swaps the visible panel.
+- **Sectioned streaming view** (`Streaming.renderPanelHTML`): labeled headers
+  ordered **Free → Subscription → Rent → Buy**. `renderInto`/`flush` use it; old
+  `renderHTML` kept but unused. Diary `renderRowHTML` reordered Free-first.
+- CSS scoped `body[data-pj]`: `.watch-btn`, `.show-watch` panel swap, sectioned
+  `.pj-strm-panel`/`.pj-strm-sec` (Free=amber, Subscription=green).
+- Cache-bust `v=37 → v=38`; label `v3.5.1 → v3.6.0` on both identical page files.
+- Validation: `node --check`; JSDOM harness extended (Watch flips to ordered
+  sections; Info has no streaming; tap-back works); `diff` confirms files identical.
+
 ## Session: v3.5.1 patch — live-page streaming wiring + decade denominator (Jun 2026)
 
 Two bug fixes on top of v3.5.0, both found in live testing.

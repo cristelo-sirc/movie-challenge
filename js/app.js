@@ -763,6 +763,13 @@
                     
                     <button class="info-btn" aria-label="More Info">Info</button>
 
+                    <button class="watch-btn" aria-label="Where to watch">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                        </svg>
+                        <span>Watch</span>
+                    </button>
+
                     <button class="pj-bookmark${isSaved ? ' is-saved' : ''}" aria-label="Save to Want to See" aria-pressed="${isSaved ? 'true' : 'false'}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
@@ -773,32 +780,37 @@
                     <div class="swipe-indicator skip">NOPE</div>
                 </div>
                 <div class="card-back">
-                    <div class="card-back-header">
-                    <span class="card-back-title">${escapeHtml(ItemManager.getTitle(movie))}</span>
-                    <span class="card-back-year">${ItemManager.getSubtitle(movie)}</span>
-                </div>
-                <div class="card-back-rating">
-                    <div class="rating-stars">${'★'.repeat(fullStars)}${halfStar ? '½' : ''}${'☆'.repeat(5 - fullStars - (halfStar ? 1 : 0))}</div>
-                    <span class="rating-value">${rating.toFixed(1)}/10</span>
-                </div>
-                
-                ${movie.runtime || director ? `
-                <div class="card-back-meta">
-                    ${movie.runtime ? `<span>${movie.runtime} min</span>` : ''}
-                    ${director ? `<span>Dir. ${escapeHtml(director)}</span>` : ''}
-                </div>` : ''}
-                
-                ${cast && cast.length ? `
-                <div class="card-back-cast">
-                    <strong>Cast:</strong> ${cast.join(', ')}
-                </div>` : ''}
-
-                <div class="card-back-overview">${escapeHtml(truncatedOverview)}</div>
-
-                <div class="card-streaming" data-stream-id="${movie.id}"></div>
-
-                <div class="card-back-footer">
-                    Tap to flip back
+                    <!-- INFO panel (shown when Info is tapped) -->
+                    <div class="card-back-info">
+                        <div class="card-back-header">
+                            <span class="card-back-title">${escapeHtml(ItemManager.getTitle(movie))}</span>
+                            <span class="card-back-year">${ItemManager.getSubtitle(movie)}</span>
+                        </div>
+                        <div class="card-back-rating">
+                            <div class="rating-stars">${'★'.repeat(fullStars)}${halfStar ? '½' : ''}${'☆'.repeat(5 - fullStars - (halfStar ? 1 : 0))}</div>
+                            <span class="rating-value">${rating.toFixed(1)}/10</span>
+                        </div>
+                        ${movie.runtime || director ? `
+                        <div class="card-back-meta">
+                            ${movie.runtime ? `<span>${movie.runtime} min</span>` : ''}
+                            ${director ? `<span>Dir. ${escapeHtml(director)}</span>` : ''}
+                        </div>` : ''}
+                        ${cast && cast.length ? `
+                        <div class="card-back-cast">
+                            <strong>Cast:</strong> ${cast.join(', ')}
+                        </div>` : ''}
+                        <div class="card-back-overview">${escapeHtml(truncatedOverview)}</div>
+                        <div class="card-back-footer">Tap to flip back</div>
+                    </div>
+                    <!-- WATCH panel (shown when Watch is tapped) -->
+                    <div class="card-back-watch">
+                        <div class="card-back-header">
+                            <span class="card-back-title">${escapeHtml(ItemManager.getTitle(movie))}</span>
+                            <span class="card-back-year">${ItemManager.getSubtitle(movie)}</span>
+                        </div>
+                        <div class="card-watch-stream" data-stream-id="${movie.id}"></div>
+                        <div class="card-back-footer">Tap to flip back</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -816,7 +828,22 @@
                 infoBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    card.classList.toggle('flipped');
+                    card.classList.remove('show-watch'); // v3.6: Info shows the synopsis side
+                    card.classList.add('flipped');
+                });
+            }
+
+            // v3.6: Watch button — flips to the streaming view (same flip as Info).
+            const watchBtn = card.querySelector('.watch-btn');
+            if (watchBtn) {
+                const stopProp = (e) => e.stopPropagation();
+                watchBtn.addEventListener('mousedown', stopProp);
+                watchBtn.addEventListener('touchstart', stopProp, { passive: true });
+                watchBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    card.classList.add('show-watch'); // show the Watch (streaming) panel
+                    card.classList.add('flipped');
                 });
             }
 
@@ -844,8 +871,8 @@
                 });
             }
 
-            // v3.5: fill the streaming ("Where to watch") block on the info side.
-            const streamEl = card.querySelector('.card-streaming');
+            // v3.6: fill the streaming ("Where to watch") block in the Watch panel.
+            const streamEl = card.querySelector('.card-watch-stream');
             if (streamEl) {
                 // taps inside the streaming block (e.g. a provider link) must not
                 // bubble up and flip the card back

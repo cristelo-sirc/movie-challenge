@@ -417,3 +417,38 @@ body[data-pj] .pj-wl-empty b{ color:var(--pj-tx-1); }
 
 /* ---- Settings: static (non-tappable) row ---- */
 body[data-pj] .pj-set-static{ cursor:default; }
+
+/* =====================================================================
+   v3.6 — "Watch" button (top-center) + dedicated sectioned streaming panel
+   ===================================================================== */
+
+/* Watch pill: play icon + label, centered between Save (left) and Info (right) */
+body[data-pj] .watch-btn{
+  position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:11;
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(0,0,0,.6); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  color:#fff; border:1px solid rgba(255,255,255,.3); padding:6px 12px 6px 11px; border-radius:20px;
+  font:600 .8rem/1 'Inter',sans-serif; letter-spacing:.5px; text-transform:uppercase; cursor:pointer;
+  transition:transform .15s ease, background .15s ease, border-color .15s ease; }
+body[data-pj] .watch-btn svg{ width:15px; height:15px; }
+body[data-pj] .watch-btn:active{ transform:translateX(-50%) scale(.94); }
+@media (hover:hover){ body[data-pj] .watch-btn:hover{ background:rgba(0,0,0,.8); border-color:#fff; } }
+body[data-pj] .movie-card.flipped .watch-btn{ display:none; }
+
+/* Two faces on the back: Info (default) vs Watch (when .show-watch is set) */
+body[data-pj] .card-back-watch{ display:none; }
+body[data-pj] .movie-card.show-watch .card-back-info{ display:none; }
+body[data-pj] .movie-card.show-watch .card-back-watch{ display:block; }
+
+/* Sectioned streaming panel — each category gets its own labeled header */
+body[data-pj] .pj-strm-panel{ border-top:none; padding-top:2px; }
+body[data-pj] .pj-strm-panel .pj-strm-h{ font-size:12px; letter-spacing:.1em; margin-bottom:16px; }
+body[data-pj] .pj-strm-sec{ margin:0 0 16px; }
+body[data-pj] .pj-strm-sec-h{ font:700 11px/1 'Inter',sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  margin-bottom:9px; display:flex; align-items:center; gap:7px; color:var(--pj-tx-1); }
+body[data-pj] .pj-strm-sec-h::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--pj-tx-2); flex:0 0 auto; }
+body[data-pj] .pj-strm-sec.s-free .pj-strm-sec-h{ color:var(--pj-amber); }
+body[data-pj] .pj-strm-sec.s-free .pj-strm-sec-h::before{ background:var(--pj-amber); }
+body[data-pj] .pj-strm-sec.s-subscription .pj-strm-sec-h{ color:var(--pj-seen); }
+body[data-pj] .pj-strm-sec.s-subscription .pj-strm-sec-h::before{ background:var(--pj-seen); }
+body[data-pj] .pj-strm-panel .pj-prov{ font-size:13px; padding:5px 11px; }

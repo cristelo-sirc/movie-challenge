@@ -2,6 +2,34 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: "Watch" button + dedicated streaming panel (Jun 2026) — v3.6.0
+
+Promoted streaming from a block on the Info side to its own poster button.
+
+- **New "Watch" pill** (play icon + label) on the poster front, **top-center**,
+  between the Save bookmark (left) and Info (right). `js/app.js` createCardElement.
+- **Card-back is now two faces.** It contains `.card-back-info` (synopsis / cast /
+  rating — streaming REMOVED) and `.card-back-watch` (streaming). Tapping **Info**
+  removes `.show-watch` and flips; tapping **Watch** adds `.show-watch` and flips;
+  CSS swaps which panel shows. Tap-back-to-flip-home is unchanged. The buttons sit
+  on the front, which is non-interactive while flipped, so the flow is: front →
+  pick a face → tap back → front.
+- **Roomier sectioned streaming view** (`Streaming.renderPanelHTML`): each
+  category gets a labeled header with a colored dot, ordered **Free → Subscription
+  → Rent → Buy** (Free + Subscription prioritized, per request). `renderInto`/
+  `flush` now use the panel renderer; the old compact `renderHTML` is kept but
+  unused by the card. Diary watchlist row summary (`renderRowHTML`) also reordered
+  Free-first. Graceful "no US listings — see TMDB" fallback retained.
+- CSS (`styles.v34.css`, scoped `body[data-pj]`): `.watch-btn`, the
+  `.card-back-info`/`.card-back-watch` show/hide on `.show-watch`, and
+  `.pj-strm-panel`/`.pj-strm-sec` section styling (Free = amber, Subscription =
+  green dots).
+- Cache-bust `v=37 → v=38`; label `v3.5.1 → v3.6.0` on both (identical) page files.
+- Validation: `node --check` clean; JSDOM harness extended (Watch button present;
+  Watch flips and renders Free→Subscription→Rent→Buy headers in order; Info flips
+  to synopsis with NO streaming; tap-back works; bookmark still doesn't rate);
+  `diff` confirms the two index files stay identical.
+
 ## Session: v3.5.1 patch — live-page streaming wiring + decade denominator (Jun 2026)
 
 Two bug fixes on top of v3.5.0, both found in live testing.

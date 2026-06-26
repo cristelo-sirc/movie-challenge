@@ -62,7 +62,38 @@ const Streaming = (function () {
             '<span class="pj-provs">' + provs(names) + '</span></div>';
     }
 
-    // Full block for the card's info side.
+    // v3.6: a labeled section for the dedicated Watch panel (more room than the
+    // inline block, so each category gets its own header).
+    function section(label, kind, names) {
+        if (!names || !names.length) return '';
+        return '<div class="pj-strm-sec s-' + kind + '">' +
+            '<div class="pj-strm-sec-h">' + esc(label) + '</div>' +
+            '<div class="pj-provs">' + provs(names) + '</div></div>';
+    }
+
+    // Roomy sectioned view for the Watch button. Order: Free -> Subscription ->
+    // Rent -> Buy (Free and Subscription prioritized at the top).
+    function renderPanelHTML(id) {
+        if (!ready) return '<div class="pj-strm pj-strm-panel pj-strm-load">Checking where to watch…</div>';
+        const d = get(id);
+        const link = (d && d.link) || tmdbWatchLink(id);
+        let secs = '';
+        if (d) {
+            secs += section('Free', 'free', d.free);
+            secs += section('Subscription', 'subscription', d.stream);
+            secs += section('Rent', 'rent', d.rent);
+            secs += section('Buy', 'buy', d.buy);
+        }
+        const body = secs || '<div class="pj-strm-none">No US streaming listings found — tap below for the latest options.</div>';
+        return '<div class="pj-strm pj-strm-panel">' +
+            '<div class="pj-strm-h">Where to watch <span class="pj-strm-region">' + REGION + '</span></div>' +
+            body +
+            '<a class="pj-strm-link" href="' + link + '" target="_blank" rel="noopener noreferrer">All options on TMDB ↗</a>' +
+            '<div class="pj-strm-credit">' + esc(CREDIT) + '</div>' +
+            '</div>';
+    }
+
+    // Compact inline block (kept for reference; the card now uses renderPanelHTML).
     function renderHTML(id) {
         if (!ready) {
             return '<div class="pj-strm pj-strm-load">Checking where to watch…</div>';
@@ -91,14 +122,14 @@ const Streaming = (function () {
     // upgrade it once the fetch resolves.
     function renderInto(el, id) {
         if (!el) return;
-        el.innerHTML = renderHTML(id);
+        el.innerHTML = renderPanelHTML(id);
         if (!ready) pending.push({ el: el, id: id });
     }
 
     function flush() {
         while (pending.length) {
             const p = pending.pop();
-            if (p && p.el) p.el.innerHTML = renderHTML(p.id);
+            if (p && p.el) p.el.innerHTML = renderPanelHTML(p.id);
         }
         while (readyCbs.length) {
             const cb = readyCbs.pop();
@@ -112,8 +143,8 @@ const Streaming = (function () {
         const link = (d && d.link) || tmdbWatchLink(id);
         let label = 'Where to watch';
         if (ready && d) {
-            if (d.stream && d.stream.length) label = 'Subscription: ' + d.stream.slice(0, 2).join(', ');
-            else if (d.free && d.free.length) label = 'Free: ' + d.free.slice(0, 2).join(', ');
+            if (d.free && d.free.length) label = 'Free: ' + d.free.slice(0, 2).join(', ');
+            else if (d.stream && d.stream.length) label = 'Subscription: ' + d.stream.slice(0, 2).join(', ');
             else if ((d.rent && d.rent.length) || (d.buy && d.buy.length)) label = 'Rent or buy';
         }
         return '<a class="pj-wl-strm" href="' + link + '" target="_blank" rel="noopener noreferrer">' +
@@ -135,6 +166,7 @@ const Streaming = (function () {
         load: load,
         get: get,
         renderHTML: renderHTML,
+        renderPanelHTML: renderPanelHTML,
         renderInto: renderInto,
         renderRowHTML: renderRowHTML,
         onReady: onReady,
