@@ -2,6 +2,26 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: v3.5.1 patch — live-page streaming wiring + decade denominator (Jun 2026)
+
+Two bug fixes on top of v3.5.0, both found in live testing.
+
+1. **Streaming/watchlist weren't on the live default page.** v3.5.0's HTML edits
+   (the `streaming.js` tag + Settings "Where to watch") only went into
+   `index.v34.html`, but the live page is `index.html` (promoted at v3.4), so it
+   never loaded `streaming.js` and the where-to-watch block was empty on every
+   film. **Fix:** re-synced `index.html` to be byte-identical to `index.v34.html`
+   (verified with `diff`). Future: consolidate the two duplicate page files.
+
+2. **Decade-filter progress denominator never updated.** The HUD "current / total"
+   numerator scoped to selected decades but the denominator was set once at init
+   to the global total. **Fix:** `handleUpdate` now sets `.count-total` to
+   `data.progress.total` (scoped) every update.
+
+- Cache-bust `v=36 → v=37`; label `v3.5.0 → v3.5.1`.
+- Validation: `node --check`; JSDOM harness 33 checks incl. denominator scope
+  (all=6 → 1980s=3 → 6); `diff` confirms the index files are identical.
+
 ## Session: Streaming availability + "Want to See" watchlist (Jun 2026) — v3.5.0
 
 ### Overview

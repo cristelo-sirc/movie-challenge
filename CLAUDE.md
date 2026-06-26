@@ -2,6 +2,37 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: v3.5.1 patch — live-page streaming wiring + decade denominator (Jun 2026)
+
+Two bug fixes on top of v3.5.0, both found in live testing.
+
+1. **Streaming/watchlist weren't on the live default page.** At v3.4 the Poster
+   Journal was promoted from `index.v34.html` to `index.html`, but v3.5.0's HTML
+   edits (the `streaming.js` script tag + the Settings "Where to watch" block)
+   only went into `index.v34.html`. The live page visitors actually load
+   (`index.html`) therefore never loaded `streaming.js`, so the where-to-watch
+   block stayed empty on every film (the bookmark + Diary worked because those
+   live in shared files). **Fix:** re-synced `index.html` to be byte-identical to
+   `index.v34.html` (verified with `diff`). Both now carry the streaming script +
+   credit. (Root smell: two duplicated page files — a future pass should
+   consolidate to one to prevent this class of drift.)
+
+2. **Decade-filter progress denominator never updated.** The Review HUD
+   "current / total" had its numerator scoped to the selected decades but the
+   denominator was set once at init (`app.js` ~L261) to the global total and
+   never refreshed — so filtering to one decade showed e.g. `40 / 4719`.
+   **Fix:** `handleUpdate` now sets `.count-total` to `data.progress.total`
+   (the scoped total from `SlidingWindow.getProgress()`) on every update, so the
+   fraction matches the scoped progress ring. No engine/storage change.
+
+- Cache-bust `?v=36 → v=37` on both page files; version label `v3.5.0 → v3.5.1`.
+- Validation: `node --check js/app.js`; JSDOM harness now 33 checks incl. a new
+  one proving the denominator scopes (all=6 → 1980s=3 → back to 6); `diff`
+  confirms the two index files are identical.
+- Note: the daily refresh run wrote real US data (4,471 / 4,721 movies) once the
+  `TMDB_KEY` secret held the valid 32-char v3 key; the bake script also now
+  accepts a v4 Bearer token and fails loudly (no blank commits) on auth errors.
+
 ## Session: Streaming availability + "Want to See" watchlist (Jun 2026) — v3.5.0
 
 ### Overview

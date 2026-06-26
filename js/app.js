@@ -421,6 +421,12 @@
         // Update counter with animation
         animateCounter(data.progress.current);
 
+        // v3.5.1: keep the denominator (total to review) in step with the active
+        // decade selection, so the fraction matches the scoped progress ring.
+        // (Previously set once at init to the global total and never updated.)
+        const totalEl = document.querySelector('.count-total');
+        if (totalEl) totalEl.textContent = (data.progress.total || 0).toLocaleString();
+
         // Update decade badge label (keeps the caret intact)
         if (elements.decadeBadgeLabel) {
             elements.decadeBadgeLabel.textContent = data.decade;
