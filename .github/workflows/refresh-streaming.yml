@@ -1,0 +1,58 @@
+name: Refresh streaming availability
+
+# Re-fetches US "where to watch" data from TMDB (powered by JustWatch) and
+# commits data/streaming-us.json. The commit triggers the Pages deploy, so the
+# live app picks up fresh data automatically.
+#
+# The TMDB key is read from the encrypted repository secret TMDB_KEY — it never
+# appears in the code or on the published site.
+#
+# One-time setup: repo Settings -> Secrets and variables -> Actions ->
+# "New repository secret" -> name TMDB_KEY, value = your TMDB API key.
+# You can run it on demand from the Actions tab ("Run workflow").
+
+on:
+  schedule:
+    - cron: '23 8 * * *'   # daily, ~08:23 UTC (GitHub may delay during peak load)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-streaming
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch US watch providers
+        env:
+          TMDB_KEY: ${{ secrets.TMDB_KEY }}
+        run: |
+          if [ -z "$TMDB_KEY" ]; then
+            echo "::error::TMDB_KEY secret is not set. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          node .github/refresh-streaming.js
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/streaming-us.json; then
+            echo "No streaming changes today."
+          else
+            git add data/streaming-us.json
+            git commit -m "chore: refresh US streaming availability [skip ci]"
+            git push
+          fi
