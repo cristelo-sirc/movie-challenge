@@ -78,6 +78,27 @@ no-delete rule with rename + in-place overwrite + a `/tmp` index; sweep `*.lock`
 
 ---
 
+## Session: Watch panel tap-to-flip-back fix (Jun 2026) — v3.8.2
+
+One-line correctness fix reported by Cris: on the **Watch** (streaming) side of a
+card, tapping to flip back only worked near the bottom; it should flip from
+anywhere, like the **Info** side.
+
+- **Root cause.** The streaming container (`.card-watch-stream`) had a blanket
+  `click → stopPropagation` handler (added in v3.6 so a provider/TMDB link tap
+  wouldn't also flip the card). Because it swallowed *every* tap in the block —
+  which fills most of the panel — only taps in the area *outside* it (the header
+  and the "Tap to flip back" footer) reached the `.card-back` flip-back handler.
+  The Info panel has no such handler, hence the asymmetry.
+- **Fix.** `js/app.js` — the streaming-block handler now stops propagation **only
+  when the tap lands on a real link** (`e.target.closest('a')`). Every other tap
+  bubbles up to `.card-back` and flips home, matching Info exactly; the TMDB
+  "All options ↗" link still opens without flipping. No CSS/markup/engine change.
+- Cache-bust `?v=42 → ?v=43`; label `v3.8.1 → v3.8.2`; `package.json` 3.8.2.
+- Validation: 49/49 harness checks, deterministic over repeated runs (added six,
+  covering Watch opens the panel, the panel renders, a tap on streaming content
+  flips back, and a tap on the TMDB link does NOT) + `node --check`.
+
 ## Session: Documentation cleanup + Git playbook (Jun 2026) — docs only
 
 Compared every doc against the live v3.8.1 app and fixed the drift. No app/code change

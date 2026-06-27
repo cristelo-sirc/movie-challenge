@@ -147,6 +147,49 @@ async function run() {
     }
 
     // ===================================================================
+    SECTION('Phase 1 — Watch panel flips back from anywhere (like Info)');
+    // v3.8.2: a tap on the streaming CONTENT must flip the card back (it used to
+    // only work on the footer); a tap on a real link must NOT flip it.
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const card = d.querySelector('#cardStack .movie-card');
+        const watchBtn = d.querySelector('.watch-btn');
+
+        watchBtn.click();                       // flip to Watch + kick the streaming render
+        // Wait for the panel to upgrade from its loading placeholder to real
+        // content (the always-present "Where to watch" header + TMDB link).
+        for (let i = 0; i < 40 && !d.querySelector('.card-watch-stream a.pj-strm-link'); i++) {
+            await sleep(25);
+        }
+        const panel = d.querySelector('.card-watch-stream');
+        ok('Watch opened the streaming panel',
+            card.classList.contains('flipped') && card.classList.contains('show-watch'));
+        ok('streaming panel rendered its content',
+            !!panel && !!panel.querySelector('.pj-strm-h') && !!panel.querySelector('a.pj-strm-link'));
+
+        // (1) The fix: a tap on streaming CONTENT (a non-link element) flips back.
+        const content = panel.querySelector('.pj-strm-h');
+        content.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true }));
+        ok('tap on streaming content flips the card back', !card.classList.contains('flipped'));
+
+        // Re-open Watch for the link case (panel is already rendered, so it just flips).
+        watchBtn.click();
+        await sleep(20);
+        ok('Watch re-opened', card.classList.contains('flipped'));
+
+        // (2) A tap on the TMDB link must NOT flip back (the link still wins).
+        const link = panel.querySelector('a.pj-strm-link');
+        link.addEventListener('click', (e) => e.preventDefault(), { once: true }); // no jsdom navigation
+        link.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true }));
+        ok('tap on a real link does NOT flip the card back', card.classList.contains('flipped'));
+
+        ok('no errors during Watch flip-back interactions', app.errors.length === 0, app.errors.join('\n'));
+        app.close();
+    }
+
+    // ===================================================================
     SECTION('Phase 2 — off-screen + year-card keyboard gating');
     // ===================================================================
     {

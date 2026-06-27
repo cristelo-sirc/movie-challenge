@@ -918,9 +918,16 @@
             // so a session that never opens Watch never downloads the streaming map.
             const streamEl = card.querySelector('.card-watch-stream');
             if (streamEl) {
-                // taps inside the streaming block (e.g. a provider link) must not
-                // bubble up and flip the card back
-                streamEl.addEventListener('click', (e) => e.stopPropagation());
+                // v3.8.2: a tap ANYWHERE in the streaming block should flip the
+                // card back, exactly like the Info side. Only a real link (the
+                // TMDB / provider <a>) swallows the tap, so following a link does
+                // not also flip the card. Previously this swallowed every tap in
+                // the block, so only the area below it (the footer) flipped back.
+                streamEl.addEventListener('click', (e) => {
+                    if (e.target && e.target.closest && e.target.closest('a')) {
+                        e.stopPropagation();
+                    }
+                });
             }
         }
 
