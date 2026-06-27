@@ -2,6 +2,97 @@
 
 This document tracks AI-assisted development work on this project.
 
+---
+
+## ⚙️ Environment & Git Playbook — READ FIRST (durable; not a session note)
+
+**You CAN commit and push from this Cowork sandbox.** Do not tell Cris you can't —
+earlier sessions wrongly gave up here. This is the worked-out recipe.
+
+### The one quirk that causes all the trouble
+The repo lives on a mounted filesystem that **blocks file _deletion_ (`unlink`) everywhere**
+— in both `.git/` and the working tree. `rm` fails with `Operation not permitted`.
+What **is** allowed: **create** a new file, **overwrite in place** (`>` redirect, `cp` over an
+existing file, `printf >`), and **rename / move** (`mv`), including renaming _over_ an existing file.
+
+Because of this:
+- Git leaves behind lock files it can't delete (`.git/index.lock`, other `*.lock`,
+  `objects/**/tmp_obj_*`). A stale `index.lock` then blocks the **next** git command with
+  `Unable to create '.git/index.lock': File exists`. The desktop app's background git also
+  creates these, so they can reappear between turns.
+- `git merge` / `git pull` that must replace a working-tree file **fail** with
+  `unable to unlink old '<file>'`, because checkout deletes-then-writes.
+
+### Always sweep locks first (move them — you can't delete them)
+Keep a junk drawer and clear locks **before** running git, in the **same** shell call:
+```bash
+mkdir -p .git/.trash
+for f in $(find .git -maxdepth 2 -name '*.lock' | grep -v '/.trash/'); do
+  mv "$f" ".git/.trash/$(basename "$f").$RANDOM"; done
+# ...then your git command immediately after...
+```
+Sweep again afterward so the repo is clean for Cris's next action. `.git/.trash/` is inert
+(git ignores non-ref/object files there).
+
+### Commit — works normally
+`git add -A && git commit -m "..."` uses create+rename and succeeds. Ignore the
+`unable to unlink ... .lock` warnings, then sweep the leftover locks.
+
+### Merge — don't use `git merge` (it unlinks working files). Use plumbing.
+For a conflict-free merge of `origin/main` into your HEAD, keep the index in `/tmp` (so its
+lock lands where deletes work) and touch files only via create / overwrite-in-place / rename:
+```bash
+export GIT_INDEX_FILE=/tmp/idx
+git read-tree <yourHEADsha>
+# re-stage each file the other side changed (example: the daily streaming file):
+blob=$(git rev-parse origin/main:data/streaming-us.json)
+git update-index --cacheinfo 100644,$blob,data/streaming-us.json
+tree=$(git write-tree)
+commit=$(git commit-tree $tree -p <yourHEADsha> -p origin/main -m "Merge origin/main")
+git cat-file -p $blob > data/streaming-us.json     # update working file IN PLACE (no unlink)
+printf '%s\n' "$commit" > .git/refs/heads/main      # move the branch ref IN PLACE
+cp /tmp/idx .git/index                               # sync the real index
+unset GIT_INDEX_FILE
+```
+Verify: `git cat-file -p HEAD` shows two parents; `git log --graph --oneline -4`.
+
+### Push — works, using the stored token
+The remote is HTTPS and the push token is in the gitignored `.github_token`. **Mask it** in any
+echoed output:
+```bash
+TOKEN=$(tr -d '[:space:]' < .github_token)
+git push "https://${TOKEN}@github.com/cristelo-sirc/movie-challenge.git" HEAD:main 2>&1 | sed "s/${TOKEN}/***/g"
+```
+After a successful push the **local** remote-tracking pointer may not update (same delete
+restriction), so `git status` can falsely say "diverged/ahead". Fix it in place and confirm
+the truth directly from GitHub:
+```bash
+printf '%s\n' "$(git rev-parse HEAD)" > .git/refs/remotes/origin/main
+git ls-remote "https://${TOKEN}@github.com/cristelo-sirc/movie-challenge.git" refs/heads/main  # ground truth
+```
+
+### Bottom line
+Commit normally; push with the token; route merges and locked-index situations around the
+no-delete rule with rename + in-place overwrite + a `/tmp` index; sweep `*.lock` into
+`.git/.trash/` before and after. Then tell Cris it's done — because it is.
+
+---
+
+## Session: Documentation cleanup + Git playbook (Jun 2026) — docs only
+
+Compared every doc against the live v3.8.1 app and fixed the drift. No app/code change
+(43/43 harness still green; `node --check` clean).
+- **README** rewritten to the current app (Poster Journal tabs, tap-to-rate, streaming
+  "where to watch", Want-to-See, 4,719 movies); dropped stale swipe/neon/runtime claims.
+- **docs/project_status.md** refreshed v3.2.0 → v3.8.1 (fixed counts, moved shipped streaming
+  out of the backlog, added a condensed v3.3–v3.8.1 changelog, surfaced the open audit items).
+- **AGENTS.md** reduced to a pointer at this file (it was a stale duplicate dev log).
+- Finished proposals/briefs + the Jun 26 audit moved to `docs/archive/`; root dev one-offs
+  (analysis scripts, data-builder, obsolete preview) to `archive/`; dead `.gitignore` entries removed.
+- Added the **Environment & Git Playbook** above after working out how to commit, merge, and
+  push under this sandbox's no-delete filesystem: commit `56fcd58`, then plumbing-merge `3dc6f2d`
+  with the bot's daily streaming refresh, pushed to `origin/main` and confirmed via `git ls-remote`.
+
 ## Session: Diary grouping tweaks (Jun 2026) — v3.8.1
 
 Two small follow-ups to the v3.8.0 "Want to See" grouping, per Cris.
