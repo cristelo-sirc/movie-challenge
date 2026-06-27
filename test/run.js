@@ -146,6 +146,132 @@ async function run() {
         app.close();
     }
 
+    // ===================================================================
+    SECTION('Phase 2 — off-screen + year-card keyboard gating');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const key = (k) => d.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
+
+        // Off-screen: a rating key while on the Settings tab must do nothing.
+        let seen = SW(w).getProgress().seen;
+        w.UIShell.switchTo('settings');
+        key('d'); await sleep(250);
+        ok('rating key ignored on Settings tab', SW(w).getProgress().seen === seen);
+
+        // Back on Review it works again.
+        w.UIShell.switchTo('review');
+        key('d'); await sleep(250);
+        ok('rating key works again on Review tab', SW(w).getProgress().seen === seen + 1);
+
+        // Year takeover up: rating keys must not reach the hidden card.
+        seen = SW(w).getProgress().seen;
+        const over = d.createElement('div'); over.className = 'decade-takeover'; d.body.appendChild(over);
+        key('d'); await sleep(250);
+        ok('rating key ignored while year card is up', SW(w).getProgress().seen === seen);
+        over.remove();
+        key('d'); await sleep(250);
+        ok('rating key works after year card dismissed', SW(w).getProgress().seen === seen + 1);
+        app.close();
+    }
+
+    // ===================================================================
+    SECTION('Phase 2 — persistence: None decades, best streak, watchlist import');
+    // ===================================================================
+    {
+        const KEY = 'movie_challenge_progress';
+
+        // "None" decades round-trips as none (was reloading as all five).
+        const noneState = JSON.stringify({ currentIndex: 0, seen: [], notSeen: [], history: [], activeEras: [], watchlist: [], version: 1 });
+        const appNone = await boot({ localStorage: { [KEY]: noneState }, allowNoCard: true });
+        ok('saved "None" decades stays none on reload',
+            appNone.window.__app.SlidingWindow.getActiveEras().length === 0,
+            'got ' + JSON.stringify(appNone.window.__app.SlidingWindow.getActiveEras()));
+        appNone.close();
+
+        // null decades => all (unchanged behavior).
+        const allState = JSON.stringify({ currentIndex: 0, seen: [], notSeen: [], history: [], activeEras: null, watchlist: [], version: 1 });
+        const appAll = await boot({ localStorage: { [KEY]: allState } });
+        ok('null decades still means all', appAll.window.__app.SlidingWindow.getActiveEras().length === 5);
+        appAll.close();
+
+        // Best streak restores from storage.
+        const streakState = JSON.stringify({ currentIndex: 0, seen: [1, 2, 3], notSeen: [], history: [], activeEras: null, watchlist: [], bestStreak: 9, version: 1 });
+        const appStreak = await boot({ localStorage: { [KEY]: streakState } });
+        ok('best streak restored from storage',
+            appStreak.window.__app.GamificationManager.bestStreak === 9,
+            'got ' + appStreak.window.__app.GamificationManager.bestStreak);
+        appStreak.close();
+
+        // Best streak is actually written (and a watchlist toggle does not wipe it).
+        {
+            const app = await boot();
+            const { window: w, document: d } = app;
+            for (let i = 0; i < 4; i++) { d.getElementById('seenBtn').click(); await sleep(230); }
+            const id = Number(d.querySelector('#cardStack .movie-card').dataset.id);
+            w.AppBridge.toggleWatchlist(id);           // a save that must NOT drop bestStreak
+            await sleep(650);                           // let the debounced save flush
+            const saved = JSON.parse(w.localStorage.getItem('movie_challenge_progress'));
+            ok('best streak is persisted to storage', (saved.bestStreak || 0) >= 1, 'saved bestStreak=' + saved.bestStreak);
+            app.close();
+        }
+    }
+
+    // ===================================================================
+    SECTION('Phase 2 — watchlist survives import; backup backdrop; share scope');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+
+        // Watchlist must survive a progress-code import (it is local-only, like the
+        // decade selection, and not carried in the code).
+        const id = Number(d.querySelector('#cardStack .movie-card').dataset.id);
+        w.AppBridge.toggleWatchlist(id);
+        ok('movie added to watchlist', SW(w).isWatchlisted(id));
+        const code = w.__app.StorageManager.exportCompressed(SW(w).getState());
+        d.getElementById('importBtn').click();          // reveals the code input
+        d.getElementById('codeInput').value = code;
+        d.getElementById('applyCodeBtn').click();
+        await sleep(80);
+        ok('watchlist preserved after import', SW(w).isWatchlisted(id));
+
+        // Backup modal closes when its backdrop is clicked (selector was wrong).
+        const bm = d.getElementById('backupModal');
+        bm.classList.remove('hidden');
+        d.querySelector('#backupModal .backup-overlay').click();
+        ok('backup backdrop click closes the modal', bm.classList.contains('hidden'));
+        app.close();
+    }
+
+    // ===================================================================
+    SECTION('Phase 2 — shared result reports lifetime (not scoped) totals');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+        let captured = '';
+        try {
+            Object.defineProperty(w.navigator, 'clipboard', {
+                value: { writeText: (t) => { captured = t; return Promise.resolve(); } }, configurable: true
+            });
+        } catch (e) { /* fall through */ }
+
+        // Rate 3 movies (all in the first decade), then filter to a DIFFERENT decade
+        // (scoped rated there = 0). The share must still report the lifetime 3.
+        for (let i = 0; i < 3; i++) { d.getElementById('seenBtn').click(); await sleep(230); }
+        const globalRated = SW(w).getProgress().globalRated;
+        SW(w).setActiveEras(['2020s']);
+        await sleep(60);
+        d.getElementById('shareBtn').click();
+        await sleep(80);
+        ok('share text uses lifetime rated count, not scoped',
+            captured.indexOf('/ 4,719') !== -1 && captured.indexOf(globalRated.toLocaleString() + ' / 4,719') !== -1,
+            'captured=' + JSON.stringify(captured.split('\n').filter(l => l.indexOf('Progress') !== -1)));
+        app.close();
+    }
+
     report();
 }
 

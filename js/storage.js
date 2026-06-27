@@ -34,6 +34,7 @@ const StorageManager = (function () {
         history: [],        // Last N actions for undo (stores {id, action} objects)
         activeEras: null,   // v3.3: decade selection (null = all decades)
         watchlist: [],      // v3.5: "Want to See" movie IDs (local only, not in share/QR)
+        bestStreak: 0,      // v3.7.1: longest streak (owned by GamificationManager; persisted here)
         lastUpdated: null,
         version: 1
     };

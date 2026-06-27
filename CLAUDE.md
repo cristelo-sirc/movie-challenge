@@ -2,6 +2,40 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Correctness fixes from the audit (Jun 2026) — v3.7.1
+
+The eight confirmed bugs from the June audit. (The double-rate one was already
+closed by the v3.7.0 input guard.) Small, isolated changes; each is harness-tested.
+
+1. **Off-screen ratings** — A/D/arrow/Z now only act when the **Review** tab is the
+   visible screen, no overlay is open, and no year takeover is up. New
+   `canReviewByKey()` gate in `handleKeyboard` (`js/app.js`). Fixes rating the
+   hidden card from Settings/Diary/Decades.
+2. **Year takeover didn't block the keyboard** — same gate handles it (a
+   `.decade-takeover` being present blocks rating keys), matching the stat drop.
+3. **"None" decades didn't persist** — `js/sliding-window.js` now honors an explicit
+   empty array (`Array.isArray(savedSel) ? savedSel : allEraIds`); only null/undefined
+   means "all". Previously a saved empty selection reloaded as all five.
+4. **Best streak was never saved** — new `persist()` helper in `js/app.js` folds
+   `GamificationManager.bestStreak` into every game-state save (so a later save such as
+   a watchlist toggle can't wipe it); `bestStreak` added to storage `defaultState`.
+   Restored at init (already read there).
+5. **Imports erased the watchlist** — `handleApplyCode` now carries the local
+   watchlist across an import (like it already does the decade selection); neither is
+   in the share code.
+6. **Filtered sharing mixed scopes** — `shareResults` now reports **lifetime** totals
+   (`globalSeen/globalNotSeen/globalRated` vs the global 4,719), instead of a
+   decade-scoped numerator against the global denominator.
+7. **Backup backdrop click was unwired** — handler queried `.modal-overlay`; the
+   markup uses `.backup-overlay`. Fixed the selector.
+8. (Double-rate — fixed in v3.7.0.)
+
+- Cache-bust `?v=39 → ?v=40`; label `v3.7.0 → v3.7.1`; `package.json` 3.7.1.
+- Validation: 31/31 harness checks, deterministic over repeated runs — new checks
+  cover off-screen/year-card gating, None-decades round-trip, best-streak
+  restore + persist-survives-watchlist-toggle, watchlist-survives-import,
+  backup-backdrop-closes, and share-uses-lifetime-totals — plus `node --check`.
+
 ## Session: Performance pass — instant card turnover (Jun 2026) — v3.7.0
 
 The first of the post-audit changes. Goal: make each rating feel instant and stop

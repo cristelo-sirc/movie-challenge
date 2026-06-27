@@ -63,11 +63,11 @@ const SlidingWindow = (function () {
             ? options.allEraIds.slice()
             : deriveAllEraIds();
 
-        // Decade selection: use the saved one, else default to every decade.
+        // Decade selection: an explicit array (incl. an empty "None") is honored;
+        // only null/undefined means "no preference → every decade". (Previously an
+        // empty array fell through to all, so a saved "None" reloaded as all.)
         const savedSel = savedState.activeEras;
-        activeEras = new Set(
-            (Array.isArray(savedSel) && savedSel.length) ? savedSel : allEraIds
-        );
+        activeEras = new Set(Array.isArray(savedSel) ? savedSel : allEraIds);
 
         currentIndex = savedState.currentIndex || 0;
         seenSet = new Set(savedState.seen || []);

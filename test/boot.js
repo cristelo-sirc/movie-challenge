@@ -160,8 +160,12 @@ function boot(opts) {
     return new Promise((resolve, reject) => {
         (function pump() {
             const app = window.__app || {};
-            const ready = app.SlidingWindow &&
-                window.document.querySelector('#cardStack .movie-card');
+            // Normally we wait for a rendered card; allowNoCard resolves once the
+            // engine + data are up even when nothing renders (e.g. "None" decades).
+            const hasData = app.ItemManager && app.ItemManager.getAll && app.ItemManager.getAll().length > 0;
+            const ready = app.SlidingWindow && (opts.allowNoCard
+                ? hasData
+                : window.document.querySelector('#cardStack .movie-card'));
             const fullyLoaded = app.DataLoader && app.DataLoader.isFullyLoaded;
             if (ready && (opts.waitFullyLoaded ? fullyLoaded : true)) {
                 return resolve({

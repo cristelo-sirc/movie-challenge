@@ -416,6 +416,22 @@
     }
 
     /**
+     * v3.7.1 — Persist game state with the current best streak folded in.
+     * bestStreak lives in GamificationManager, not in SlidingWindow.getState(), so
+     * every save must carry it — otherwise a later save (e.g. a watchlist toggle)
+     * would overwrite the stored value with nothing and the best streak would reset
+     * to 0 on the next reload.
+     * @param {Object} [state] - state to save (defaults to the current game state)
+     */
+    function persist(state) {
+        const s = state || SlidingWindow.getState();
+        if (typeof GamificationManager !== 'undefined' && typeof GamificationManager.bestStreak === 'number') {
+            s.bestStreak = GamificationManager.bestStreak;
+        }
+        StorageManager.save(s);
+    }
+
+    /**
      * Handle updates from the sliding window
      * @param {Object} data - Update data
      */
@@ -475,8 +491,8 @@
         // Preload images
         preloadImages(data.preload);
 
-        // Save state (now includes the decade selection)
-        StorageManager.save(data.state);
+        // Save state (decade selection + best streak folded in)
+        persist(data.state);
 
         // Update background (desktop)
         updateBackground(data.window[0]);
@@ -921,7 +937,7 @@
             btn.setAttribute('aria-pressed', nowSaved ? 'true' : 'false');
         }
         vibrate(10);
-        StorageManager.save(SlidingWindow.getState());
+        persist();
         showToast(nowSaved ? 'Added to Want to See' : 'Removed from Want to See', 'success');
         if (window.UIShell && typeof UIShell.onWatchlistChange === 'function') {
             try { UIShell.onWatchlistChange(); } catch (e) { /* shell render must never break review */ }
@@ -1184,9 +1200,10 @@
         if (elements.shareLink) {
             elements.shareLink.addEventListener('click', copyShareLink);
         }
-        // Close backup modal on overlay click
+        // Close backup modal on overlay click (markup uses .backup-overlay, not
+        // .modal-overlay — the old selector silently matched nothing).
         if (elements.backupModal) {
-            elements.backupModal.querySelector('.modal-overlay')?.addEventListener('click', closeBackupModal);
+            elements.backupModal.querySelector('.backup-overlay')?.addEventListener('click', closeBackupModal);
         }
 
         // ===== Decade picker (v3.3) =====
@@ -1335,8 +1352,10 @@
             return;
         }
 
-        // Keep the user's current decade selection across an import
+        // Keep the user's LOCAL-only settings across an import (neither is carried
+        // in a share code): the active decade selection and the "Want to See" list.
         newState.activeEras = SlidingWindow.getActiveEras();
+        newState.watchlist = SlidingWindow.getWatchlist(); // v3.7.1: don't wipe the watchlist
         StorageManager.save(newState);
 
         // Reinitialize the sliding window
@@ -1373,8 +1392,14 @@
     function shareResults() {
         if (requiresFullData()) return;
         const progress = SlidingWindow.getProgress();
-        const percentSeen = progress.current > 0
-            ? Math.round((progress.seen / progress.current) * 100)
+        // v3.7.1: share LIFETIME totals, not the decade-scoped view. The share code
+        // is filter-agnostic, so pairing a scoped numerator with the global 4,719
+        // denominator was inconsistent. Use the global fields throughout.
+        const seenCount = progress.globalSeen;
+        const notSeenCount = progress.globalNotSeen;
+        const ratedCount = progress.globalRated;
+        const percentSeen = ratedCount > 0
+            ? Math.round((seenCount / ratedCount) * 100)
             : 0;
 
         // Calculate era breakdown
@@ -1394,9 +1419,9 @@
 
         const shareText = `🎬 My ${challengeName} Progress
 
-✅ ${positiveLabel.charAt(0).toUpperCase() + positiveLabel.slice(1)}: ${progress.seen.toLocaleString()} ${itemTypePlural} (${percentSeen}%)
-❌ ${negativeLabel.charAt(0).toUpperCase() + negativeLabel.slice(1)}: ${progress.notSeen.toLocaleString()}
-📊 Progress: ${progress.current.toLocaleString()} / ${totalCount}
+✅ ${positiveLabel.charAt(0).toUpperCase() + positiveLabel.slice(1)}: ${seenCount.toLocaleString()} ${itemTypePlural} (${percentSeen}%)
+❌ ${negativeLabel.charAt(0).toUpperCase() + negativeLabel.slice(1)}: ${notSeenCount.toLocaleString()}
+📊 Progress: ${ratedCount.toLocaleString()} / ${totalCount}
 ${bestEra ? `🏆 Favorite era: ${bestEra[0]} (${bestEra[1]} ${positiveLabel})` : ''}
 
 Try it yourself: ${shareUrl}
@@ -1721,7 +1746,7 @@ ${baseUrl}`;
 
         suppressYearCardOnce = true;
         SlidingWindow.setActiveEras(Array.from(pendingSelection));
-        StorageManager.save(SlidingWindow.getState());
+        persist();
 
         const active = SlidingWindow.getActiveEras();
         if (active.length === 0) {
@@ -1866,6 +1891,23 @@ ${baseUrl}`;
      * Handle keyboard input
      * @param {KeyboardEvent} e
      */
+    /**
+     * v3.7.1 — Is the deck actually interactive right now? Rating/undo keys must
+     * only act when the Review tab is the visible screen, no overlay is open, and
+     * no year takeover is covering the card. (Fixes off-screen ratings and the
+     * year-takeover keyboard gap.)
+     */
+    function canReviewByKey() {
+        const active = document.querySelector('.pj-screen.active');
+        if (active && active.dataset.screen && active.dataset.screen !== 'review') return false;
+        if (elements.decadeOverlay && !elements.decadeOverlay.classList.contains('hidden')) return false;
+        if (elements.statsOverlay && !elements.statsOverlay.classList.contains('hidden')) return false;
+        if (elements.modalOverlay && !elements.modalOverlay.classList.contains('hidden')) return false;
+        if (elements.backupModal && !elements.backupModal.classList.contains('hidden')) return false;
+        if (document.querySelector('.decade-takeover')) return false; // year card is up
+        return true;
+    }
+
     function handleKeyboard(e) {
         // Ignore if typing in an input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1891,6 +1933,11 @@ ${baseUrl}`;
                 return;
             }
         }
+
+        // Rating/undo keys only act on the live Review deck — never off-screen or
+        // behind an overlay / year takeover.
+        const ratingKey = ['ArrowRight', 'd', 'D', 'ArrowLeft', 'a', 'A', 'z', 'Z'].indexOf(e.key) !== -1;
+        if (ratingKey && !canReviewByKey()) return;
 
         switch (e.key) {
             case 'ArrowRight':
@@ -2093,14 +2140,14 @@ ${baseUrl}`;
         toggleWatchlist: function (id) {
             if (typeof SlidingWindow === 'undefined' || !SlidingWindow.toggleWatchlist) return false;
             const nowSaved = SlidingWindow.toggleWatchlist(id);
-            StorageManager.save(SlidingWindow.getState());
+            persist();
             return nowSaved;
         },
         reviewDecade: function (eraId) {
             if (typeof SlidingWindow === 'undefined' || !eraId) return;
             suppressYearCardOnce = true;
             SlidingWindow.setActiveEras([eraId]);
-            StorageManager.save(SlidingWindow.getState());
+            persist();
             elements.completionState.classList.add('hidden');
             elements.seenBtn.disabled = false;
             elements.skipBtn.disabled = false;
