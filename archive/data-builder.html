@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5000 Movie Challenge - Data Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d4aa, #00b4d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 32px;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step h2 {
+            font-size: 1rem;
+            color: #00d4aa;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            color: #aaa;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-family: monospace;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #00d4aa;
+        }
+
+        button {
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4aa, #00b4d8);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4aa, #00b4d8);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: #888;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .log.show {
+            display: block;
+        }
+
+        .log .success {
+            color: #00d4aa;
+        }
+
+        .log .error {
+            color: #ff6b6b;
+        }
+
+        .result {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result h3 {
+            color: #00d4aa;
+            margin-bottom: 12px;
+        }
+
+        .result p {
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .result textarea {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.75rem;
+            padding: 12px;
+            resize: vertical;
+        }
+
+        .btn-copy {
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎬 Data Builder</h1>
+        <p class="subtitle">Fetch 5,000 real movies from TMDB</p>
+
+        <div class="step">
+            <h2>Step 1: Enter Your API Key</h2>
+            <p>Paste your TMDB API Key below. This runs entirely in your browser — your key is never sent anywhere
+                except TMDB.</p>
+            <input type="text" id="apiKey" placeholder="e.g. 8f486ffcb9d0d56632530bdf8c977cd3"
+                value="8f486ffcb9d0d56632530bdf8c977cd3">
+        </div>
+
+        <div class="step">
+            <h2>Step 2: Fetch Movies</h2>
+            <p>This will fetch the top ~110 most popular movies for each year from 1980 to 2025. Takes about 2-3
+                minutes.</p>
+            <button class="btn-primary" id="fetchBtn" onclick="startFetch()">Start Fetching</button>
+
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Starting...</p>
+            </div>
+
+            <div class="log" id="log"></div>
+        </div>
+
+        <div class="result" id="result">
+            <h3>✅ Success!</h3>
+            <p>Copy the code below and replace the contents of <code>data/movies.js</code> in your project folder. Then
+                refresh your app!</p>
+            <textarea id="output" readonly></textarea>
+            <button class="btn-copy" onclick="copyOutput()">📋 Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        const START_YEAR = 1980;
+        const END_YEAR = 2025;
+        const MOVIES_PER_YEAR = 109;
+        const TOTAL_YEARS = END_YEAR - START_YEAR + 1;
+
+        let allMovies = [];
+
+        function log(msg, type = '') {
+            const logEl = document.getElementById('log');
+            logEl.classList.add('show');
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateProgress(year, count) {
+            const yearsDone = year - START_YEAR;
+            const percent = Math.round((yearsDone / TOTAL_YEARS) * 100);
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressText').textContent =
+                `Fetching ${year}... (${count.toLocaleString()} movies so far)`;
+        }
+
+        async function fetchMoviesForYear(apiKey, year) {
+            let movies = [];
+            let page = 1;
+            const maxPages = Math.ceil(MOVIES_PER_YEAR / 20) + 1;
+
+            while (movies.length < MOVIES_PER_YEAR && page <= maxPages) {
+                const url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&primary_release_year=${year}&vote_count.gte=100&page=${page}`;
+
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    if (data.status_code) {
+                        throw new Error(data.status_message);
+                    }
+
+                    if (!data.results || data.results.length === 0) break;
+
+                    for (const m of data.results) {
+                        if (m.poster_path) {
+                            movies.push({
+                                id: m.id,
+                                title: m.title,
+                                year: year,
+                                poster_path: m.poster_path,
+                                backdrop_path: m.backdrop_path || null,
+                                overview: m.overview,
+                                vote_average: m.vote_average
+                            });
+                        }
+                    }
+
+                    page++;
+                    await new Promise(r => setTimeout(r, 100)); // Rate limit
+                } catch (e) {
+                    log(`Error: ${e.message}`, 'error');
+                    break;
+                }
+            }
+
+            return movies.slice(0, MOVIES_PER_YEAR);
+        }
+
+        async function startFetch() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter your API key');
+                return;
+            }
+
+            // Reset
+            allMovies = [];
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('fetchBtn').disabled = true;
+
+            log('Starting fetch...');
+
+            for (let year = START_YEAR; year <= END_YEAR; year++) {
+                const yearMovies = await fetchMoviesForYear(apiKey, year);
+                allMovies.push(...yearMovies);
+                log(`${year}: ${yearMovies.length} movies`, 'success');
+                updateProgress(year, allMovies.length);
+                await new Promise(r => setTimeout(r, 150)); // Small delay between years
+            }
+
+            // Sort by year
+            allMovies.sort((a, b) => a.year - b.year);
+
+            // Generate output
+            const output = `/**
+ * 5000 Movie Challenge - Dataset
+ * Generated: ${new Date().toISOString()}
+ * Source: TMDB
+ * Total: ${allMovies.length}
+ */
+
+const MOVIES = ${JSON.stringify(allMovies, null, 2)};
+`;
+
+            document.getElementById('output').value = output;
+            document.getElementById('result').classList.add('show');
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('progressText').textContent =
+                `Complete! ${allMovies.length.toLocaleString()} movies fetched.`;
+            document.getElementById('fetchBtn').disabled = false;
+
+            log(`Done! ${allMovies.length} movies fetched.`, 'success');
+        }
+
+        function copyOutput() {
+            const textarea = document.getElementById('output');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Copied! Now paste this into data/movies.js');
+        }
+    </script>
+</body>
+
+</html>

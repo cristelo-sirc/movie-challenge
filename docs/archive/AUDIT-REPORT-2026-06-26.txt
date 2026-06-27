@@ -1,0 +1,139 @@
+MOVIE QUIZ / POSTER JOURNAL — APPLICATION AUDIT
+Date: June 26, 2026
+
+VERDICT
+
+This is a thoughtfully designed, unusually polished vanilla-JavaScript app. The data model, local-first approach, chunked loading, streaming fallback, and Poster Journal UI are all strong. The main weakness is accumulated layering: each rating now triggers much more rendering and background work than the visible transition requires.
+
+No files were changed during the audit.
+
+
+POSTER-CYCLE LATENCY
+
+The warm path is mostly not network-bound—the browser had eight upcoming w500 posters preloaded. The largest delays come from the transition design:
+
+1. A rating starts the fly-off animation.
+2. The app waits a fixed 160 ms.
+3. State advances.
+4. All five cards are destroyed and rebuilt.
+5. Peeks, background, theme, storage, and shell UI update afterward.
+
+Relevant code:
+- js/app.js:1900 — animateButtonSwipe
+- js/app.js:691 — renderCards
+
+Recommended design:
+
+- Advance state immediately and render the next poster underneath an outgoing cloned card. Let the clone finish its animation independently.
+- Add an isTransitioning guard. Currently rapid double-taps or key repeat can schedule two timers and rate two movies.
+- Preload with img.decode() and track readiness, rather than merely assigning new Image().src.
+- Reconcile the card stack incrementally instead of rebuilding all five cards.
+- Use animationend as cleanup rather than coordinating two hard-coded timers.
+- Add fetchpriority="high" to the top poster and decoding="async".
+
+There is also avoidable image traffic. A mobile session had eight w500 posters, a separate w300 backdrop, and two w185 peeks—427 KiB across the observed image cluster. Each cycle introduces a future poster, another peek size, and usually a different backdrop. Reusing the preloaded poster for the next peek and ambient wash would leave substantially less work.
+
+Relevant code:
+- js/ui-shell.js:105 — next peek uses a separate w185 image
+- js/app.js:1967 — background uses a separate backdrop request
+
+Background loading can also interrupt early interactions:
+
+- Each arriving decade chunk calls notifyItemsAppended(), triggering another complete card rebuild even when the visible window did not change. See js/app.js:337.
+- Remaining movie chunks begin loading immediately—about 886 KiB gzip after the initial decade.
+- The 1.4 MB streaming map is fetched and parsed immediately with no-cache, even if Watch is never opened. See js/streaming.js:42.
+
+Recommended changes:
+
+- Defer streaming data until Watch or Diary needs it.
+- Schedule background chunks during idle periods.
+- Refresh the card window only when newly appended items can affect it.
+
+
+IMPORTANT CORRECTNESS FINDINGS
+
+1. Off-screen ratings
+
+Arrow/A/D shortcuts rate movies while the user is in Settings, Diary, Decades, or behind overlays. This was reproduced in Settings: the hidden review count advanced. A subsequent action left Settings showing stale totals.
+
+Relevant code: js/app.js:1847
+
+2. Rapid input can rate multiple films
+
+Action buttons remain enabled during the 160 ms timer. A double-tap or repeated key can schedule multiple ratings.
+
+Relevant code: js/app.js:1900
+
+3. “None” decade selection is not persistent
+
+A saved activeEras: [] reloads as all five decades. This was reproduced directly.
+
+Relevant code: js/sliding-window.js:66
+
+4. Year takeover does not block keyboard ratings
+
+Unlike the stat-drop overlay, the year takeover is absent from keyboard gating. Rating shortcuts can therefore act on the hidden card beneath it.
+
+5. Best streak is never saved
+
+Best streak is read during initialization but omitted from persisted sliding-window state.
+
+6. Progress imports erase the local watchlist
+
+Imports preserve active decades but not watchlist, despite watchlists intentionally being excluded from share codes.
+
+7. Filtered sharing mixes scopes
+
+Scoped seen/rated counts are displayed against the global 4,719-movie denominator.
+
+Relevant code: js/app.js:1351
+
+8. Backup backdrop click is unwired
+
+JavaScript queries .modal-overlay, while the markup uses .backup-overlay.
+
+Relevant code: js/app.js:1165 and index.html:356
+
+
+UX AND ACCESSIBILITY
+
+- At 375x667, Watch overlaps Info by approximately 24.5 px. The short-screen rule shrinks the card to 52vw but not its three top controls. See styles.v34.css:425.
+- user-scalable=no prevents pinch zoom. See index.html:6.
+- “Tap to continue” controls are styled as buttons but implemented as non-focusable div elements.
+- Modals lack dialog semantics, focus trapping, and focus restoration.
+- There are no deliberate :focus-visible styles.
+- Reduced-motion users still wait through the 160 ms transition timer.
+
+
+MAINTAINABILITY AND DELIVERY
+
+- The available 47 legacy tests pass, but they are ignored under scripts/. The newer JSDOM harness described in AGENTS.md is not tracked. Deployment runs no tests. See .gitignore:12.
+- GitHub Pages deploys the entire repository, including roughly 10 MB of unused duplicate/raw movie data. See .github/workflows/deploy.yml:28.
+- The streaming refresh writes a partial dataset whenever some API calls succeed. A transient partial outage could erase thousands of valid entries. See .github/refresh-streaming.js:129.
+- The refresh script uses the stale 4,721-entry monolith, which contains two duplicate IDs, instead of the canonical 4,719-item manifest/chunks.
+- app.js retains dead swipe machinery and hardcodes movie fields despite the configuration abstraction.
+- HTML escaping is inconsistent—cast names and several attributes are interpolated raw. Current baked data is benign, so this is hardening rather than an active exploit.
+- Documentation still describes swipe behavior and runtime metadata, but swipe is removed and all 4,719 chunk records lack runtime.
+
+
+VALIDATION SUMMARY
+
+- JavaScript syntax and JSON parsing: pass.
+- index.html and index.v34.html: identical.
+- Dataset: 4,719 ordered, unique IDs; no missing posters.
+- Streaming: 4,471 matched entries, 94.7% coverage.
+- Available tests: 47/47 pass.
+- Browser console: no warnings or errors.
+
+
+RECOMMENDED IMPLEMENTATION ORDER
+
+1. Add transition/input guards and prevent rating outside the Review screen or behind overlays.
+2. Reveal the next card immediately while animating the outgoing card independently.
+3. Preload and decode the next poster before it is needed.
+4. Stop rebuilding all five cards for every rating and background chunk arrival.
+5. Reuse poster assets for peeks/ambient visuals and defer nonessential data work.
+6. Fix decade, watchlist, streak, sharing, and keyboard-state persistence bugs.
+7. Commit the current regression harness and run it in CI before deployment.
+
+The first performance patch should combine the transition guard, immediate next-card reveal, decoded preloading, and deferred background work. That should produce the most noticeable speed improvement without changing the app’s visual language.

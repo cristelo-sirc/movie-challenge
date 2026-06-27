@@ -1,0 +1,116 @@
+Checking keywords for expanded movie list...
+
+🎬 Hardbodies (1984)
+   ID: 52736
+   Vote Count: 65
+   Genres: Comedy
+   Keywords: politically incorrect (11475), older man younger woman relationship (14669), beach house (34145), middle ages (476-1453) (41406), psychotronic (164218), sex comedy (170827), swimsuit (178507), beach blanket (178520), nude modeling (195988)
+---------------------------------------------------
+🎬 Teen Witch (1989)
+   ID: 25199
+   Vote Count: 187
+   Genres: Comedy, Fantasy, Romance
+   Keywords: witch (616), high school (6270), teen movie (11870), teen witch (184114), magic spell (249692), teenager (296608)
+---------------------------------------------------
+🎬 Bachelor Party (1984)
+   ID: 12309
+   Vote Count: 696
+   Genres: Comedy
+   Keywords: bachelor (1338), loyalty (1797), donkey (4144), stag night (8070), wedding (13027)
+---------------------------------------------------
+🎬 Rock 'n' Roll High School Forever (1991)
+   ID: 34742
+   Vote Count: 16
+   Genres: Comedy
+   Keywords: sequel (9663), woman director (187056)
+---------------------------------------------------
+🎬 Ski Patrol (1990)
+   ID: 22585
+   Vote Count: 41
+   Genres: Comedy, Action
+   Keywords: sports (6075), snow skiing (159558), ski resort (162328), ski (195732)
+---------------------------------------------------
+🎬 Ski School (1991)
+   ID: 21811
+   Vote Count: 101
+   Genres: Comedy
+   Keywords: sports (6075), rivalry (9823), snow skiing (159558), ski resort (162328)
+---------------------------------------------------
+🎬 Back to the Beach (1987)
+   ID: 26477
+   Vote Count: 46
+   Genres: Comedy, Music
+   Keywords: spoof (11931), woman director (187056)
+---------------------------------------------------
+🎬 Moving Violations (1985)
+   ID: 31462
+   Vote Count: 70
+   Genres: Comedy
+   Keywords: police (6149), stolen cars (162842), traffic school (208606), traffic court (208607)
+---------------------------------------------------
+🎬 Summer School (1983)
+   ID: 1213904
+   Vote Count: 0
+   Genres: Comedy
+   Keywords: 
+---------------------------------------------------
+🎬 Hamburger: The Motion Picture (1986)
+   ID: 52117
+   Vote Count: 31
+   Genres: Comedy
+   Keywords: hamburger (6746), school (10873)
+---------------------------------------------------
+🎬 The Bikini Carwash Company (1992)
+   ID: 56115
+   Vote Count: 22
+   Genres: Comedy
+   Keywords: bikini (7984), car wash (156401)
+---------------------------------------------------
+🎬 Saturday the 14th (1981)
+   ID: 20472
+   Vote Count: 109
+   Genres: Comedy, Fantasy, Horror
+   Keywords: monster (1299), alcohol (567), haunted house (3358), clowning (4507), search (11112), spoof (11931), creature (13031), shark (15097), will (41351), attic (155619)
+---------------------------------------------------
+🎬 One Crazy Summer (1986)
+   ID: 18282
+   Vote Count: 211
+   Genres: Comedy, Romance, Family
+   Keywords: aftercreditsstinger (179430), cartoonist (202399), property development (209164), summer holiday (213450), nantucket (223212)
+---------------------------------------------------
+🎬 No Retreat, No Surrender (1986)
+   ID: 12721
+   Vote Count: 609
+   Genres: Action, Comedy, Crime, Drama
+   Keywords: showdown (797), karate (3436), training (4613), bully (10624), hoodlum (160488), ghost (162846), skateboarder (178873), break dance (286880)
+---------------------------------------------------
+🎬 Solarbabies (1986)
+   ID: 36677
+   Vote Count: 87
+   Genres: Science Fiction, Action, Adventure, Romance
+   Keywords: dystopia (4565), post-apocalyptic future (4458), roller-skating (6234), drought (180999), gang violence (181858), rebel gangs (249859), hockey (289584)
+---------------------------------------------------
+🎬 Ratboy (1986)
+   ID: 96163
+   Vote Count: 9
+   Genres: Comedy, Crime, Drama
+   Keywords: 
+---------------------------------------------------
+🎬 The Wraith (1986)
+   ID: 10017
+   Vote Count: 498
+   Genres: Action, Science Fiction
+   Keywords: sheriff (798), car race (830), cemetery (1227), killing (627), arizona (1859), reincarnation (5484), car crash (9844), romance (9840), street race (9666), revenge (9748), murder (9826), gang (10726), motorcycle (14735), ghost (162846)
+---------------------------------------------------
+🎬 Troll (1986)
+   ID: 33061
+   Vote Count: 258
+   Genres: Fantasy, Horror
+   Keywords: troll (11173), hard to kill (12404), killer (15127), death (34079)
+---------------------------------------------------
+🎬 Alien from L.A. (1988)
+   ID: 31397
+   Vote Count: 72
+   Genres: Family, Science Fiction, Adventure
+   Keywords: parent child relationship (970), jules verne (385), expedition (1963), south africa (3644), sexploitation (10053), archaeologist (41586), subterranean (162801), archaeological dig (179568), scientific expedition (181239), secret police (190025), gauteng (194705), hidden civilization (195394), zimbabwe (195395), archaeological expedition (195396), subterranean world (195397)
+---------------------------------------------------

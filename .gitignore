@@ -12,15 +12,8 @@ Thumbs.db
 # Local scripts (not needed for deployment)
 scripts/
 
-# One-off analysis scripts & their output left in repo root (local only)
-/analyze_popularity.js
-/check_expanded_movies.js
-/check_specific_movies.js
-/find_keywords.js
-/keywords_output.txt
-
-# Data builder (not needed for end users)
-data-builder.html
+# One-off analysis scripts, the data builder, and the obsolete UI preview were
+# moved to archive/ (June 2026) and kept there as history rather than ignored.
 
 # Local secrets (never commit)
 .tmdb_key

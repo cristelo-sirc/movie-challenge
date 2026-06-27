@@ -1,61 +1,68 @@
 
-# 🎬 Movie Challenge
+# 🎬 Poster Journal
 [![Live Demo](https://img.shields.io/badge/demo-live-green.svg?style=for-the-badge&logo=github)](https://cristelo-sirc.github.io/movie-challenge/)
 
-**Can you watch them all?**
-A Tinder-style movie discovery app that challenges you to track your film history across **4,719 movies** spanning from 1980 to 2025.
+**A personal movie journal for the films you've seen.**
+Poster Journal (repo: *movie-challenge*) is a local-first web app that helps you track your film history across **4,719 movies** spanning **1980–2025** — one poster at a time. No account, no tracking; everything lives in your browser.
 
 ## ✨ Features
 
-### 🎞 Massive Dataset
-*   **4,719 Movies:** Curated selection of English-language hits, cult classics, and award-winning international films.
-*   **Rich Metadata:** Tap any card to flip it and see **Rating**, **Runtime**, and **Synopsis**.
-*   **Decade Filtering:** Jump straight to the 80s, 90s, 2000s, 2010s, or 2020s.
+### 📒 Poster Journal UI
+A four-tab app with a bottom nav bar:
 
-### 🎨 Dynamic Themes
-*   **Time Travel UI:** The interface transforms as you swipe through time.
-    *   **1980s:** Neon Synthwave grid with magenta glow.
-    *   **1990s:** Dark Grunge with distressed textures.
-    *   **2000s:** Y2K Matrix digital aesthetic.
-    *   **2010s/20s:** Modern, clean dark mode with vibrant gradients.
+*   **Review** — the poster deck. Tap **Seen** or **Haven't Seen** to log a film (or use the keyboard: A / D / arrow keys; **Undo** reverses the last call). Previous/next posters peek in from the sides.
+*   **Diary** — your "Movie DNA": seen / rated / remaining totals, strongest decade, top years, a 1980–2025 timeline, and decade-by-decade "chapters." Also holds your **Want to See** list.
+*   **Decades** — browse each decade as a journal chapter (progress, counts, top years) and jump straight into reviewing just that decade.
+*   **Settings** — sound toggle, decade filter, where-to-watch region, and backup/share.
+
+### 🎞 The Card
+*   **4,719 movies** — curated English-language hits, cult classics, and global crossover films (the curation method is in [`docs/curation_strategy.md`](docs/curation_strategy.md)).
+*   **Info** — tap to flip the poster for the **synopsis, cast, and rating**.
+*   **Watch** — tap for **where to watch** in the US, split honestly into **Free · Subscription · Rent · Buy** (data from TMDB/JustWatch). Movies with no listing link out to the live TMDB watch page.
+*   **Save** — bookmark a film to your **Want to See** list, which then appears in the Diary.
+
+### 🗓 Year Cards
+Crossing into a new year shows a brief full-screen card with a few cinema facts from that year plus a famous quote from a film released that year. Tap to continue.
+
+### 🎨 Subtle Decade Theming
+The interface shifts a single accent color and a soft ambient glow as you move through the decades (magenta → amber → emerald → blue → violet), over a dark cinema base with light film grain. Restrained, not neon.
 
 ### 🔊 Immersive Audio
-*   **Synthesized Sound Engine:** Custom sound effects generated in real-time using the **Web Audio API**.
-*   **Feedback:** Satisfying "Ding" for Seen, "Thud" for Nope, and Fanfare for milestones.
-*   **Toggle:** Optional sound with easy on-screen mute button.
+*   Synthesized sound effects generated in real time via the **Web Audio API** — a "ding" for Seen, a "thud" for Haven't Seen, fanfares for milestones.
+*   Optional, with an on-screen mute toggle.
 
 ### 🎮 Gamification
-*   **Streaks:** Build up a "Seen" streak (🔥) to unlock fire animations and sounds.
-*   **Ranks:** Level up from "Extra" to "Legend" as you rate more movies.
-*   **Milestones:** Celebrate hitting 10, 50, 100+ movies seen with confetti explosions.
+*   **Streaks** — build a "Seen" streak (🔥) that escalates as it grows.
+*   **Ranks** — level up from "Extra" to "Legend" as you rate more films.
+*   **Milestones** — confetti when you hit 10, 50, 100+ seen.
 
 ### 💾 Backup & Sync
-*   **Local First:** All progress is saved automatically to your browser.
-*   **Privacy Focused:** No account required. No tracking.
-*   **Cross-Device Sync:** Export your progress as a **QR Code** to move from Desktop to Mobile instantly.
+*   **Local first** — progress saves automatically to your browser.
+*   **Cross-device** — export your progress as a **QR / share code** (compressed with LZString) and import it on another device. (Your Want-to-See list stays local and is preserved across imports.)
 
 ## 🛠 Tech Stack
-Built for speed and simplicity using modern web standards.
-*   **Core:** Vanilla JavaScript (ES6+), HTML5, CSS3, Web Audio API.
-*   **Storage:** `localStorage` for persistence, `LZString` for compressed QR codes.
+*   **Core:** Vanilla JavaScript (ES6+), HTML5, CSS3, Web Audio API. Zero frameworks.
+*   **Storage:** `localStorage` for persistence; `LZString` for compressed share codes.
 *   **Performance:**
-    *   Zero frameworks (No React/Vue/Angular bloat).
-    *   Decade-chunked data loading: the first card appears after ~280KB instead of ~1.4MB; remaining decades stream in the background.
-    *   Virtual "Sliding Window" DOM rendering (renders only 5 cards at a time for 60fps performance).
-    *   Smart image preloading.
+    *   Decade-chunked data loading — the first card appears after ~280 KB instead of ~1.4 MB; remaining decades stream in the background.
+    *   Virtual "sliding window" rendering (only ~5 cards in the DOM at a time).
+    *   Decoded image preloading for instant card turnover.
 
 ## 🚀 Deployment
-This project is automatically deployed/hosted via **GitHub Pages**.
+Hosted on **GitHub Pages**.
 *   **Live URL:** [https://cristelo-sirc.github.io/movie-challenge/](https://cristelo-sirc.github.io/movie-challenge/)
-*   **Workflow:** Pushing to the `main` branch triggers a GitHub Action (`.github/workflows/deploy.yml`) that builds and deploys the static content.
+*   **Deploy:** Pushing to `main` triggers `.github/workflows/deploy.yml` (static deploy).
+*   **Streaming refresh:** a separate daily Action (`.github/workflows/refresh-streaming.yml`) re-bakes US watch-provider data into `data/streaming-us.json`, using the repo secret `TMDB_KEY`.
 
 ## 💻 Run Locally
-This is a static web application — no build step. Since v2.1 the movie data loads over HTTP (decade chunks), so you need a local web server:
+This is a static app — no build step. Since v2.1 the movie data loads over HTTP (decade chunks), so you need a local web server:
 
 1.  Clone the repository.
-2.  Run a simple server from the project folder, e.g. `python3 -m http.server`
-3.  Open `http://localhost:8000` in your browser. (Opening `index.html` directly from disk no longer works.)
+2.  From the project folder, run a simple server, e.g. `python3 -m http.server`
+3.  Open `http://localhost:8000`. (Opening `index.html` from disk no longer works.)
+
+To run the regression tests: `npm install` then `npm test`.
 
 ## 👏 Credits
-*   Movie Data provided by [The Movie Database (TMDB)](https://www.themoviedb.org/).
+*   Movie data and streaming availability from [The Movie Database (TMDB)](https://www.themoviedb.org/) and JustWatch.
 *   *This product uses the TMDB API but is not endorsed or certified by TMDB.*
