@@ -2,6 +2,27 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Single index file + committed test harness (Jun 2026) — housekeeping
+
+Prep for the v3.7/v3.8 work, addressing two long-standing smells.
+
+- **Consolidated to ONE page file.** Deleted `index.v34.html`; the live
+  `index.html` (the Poster Journal page, promoted at v3.4) is now the single
+  source. The two had been kept byte-identical by hand and drifted twice before
+  (see v3.5.1), causing "the live page didn't get the change" bugs. All future
+  edits target `index.html` only. No code/workflow referenced the old file (only
+  these historical notes did).
+- **Committed a real regression harness** under `test/` (was previously run
+  ad-hoc and never saved — see the audit's maintainability finding). `test/boot.js`
+  boots the REAL `index.html` + full JS bundle in JSDOM against the REAL data
+  chunks via a local-file `fetch` shim (no server). `test/run.js` is the cumulative
+  suite; `test/smoke.js` a quick boot check. `package.json` adds `npm test`.
+  jsdom is a devDependency (gitignored `node_modules`, `package-lock.json`).
+- Validation: 12/12 invariant checks green and deterministic across repeated runs
+  (boot with 0 errors, 4,719 items; Seen/Haven't-Seen advance; Undo restores;
+  watchlist toggle; decade filter scoping; share-code round-trip). Audio is
+  disabled in-harness (no AudioContext) so logic tests never touch sound.
+
 ## Session: "Watch" button + dedicated streaming panel (Jun 2026) — v3.6.0
 
 Promoted streaming from a block on the Info side to its own poster button.

@@ -1,0 +1,18 @@
+{
+  "name": "movie-quiz",
+  "version": "3.6.0",
+  "description": "Poster Journal — a local-first movie review challenge (vanilla JS).",
+  "private": true,
+  "scripts": {
+    "test": "node test/run.js",
+    "smoke": "node test/smoke.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cristelo-sirc/movie-challenge.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

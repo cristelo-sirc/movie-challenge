@@ -27,3 +27,4 @@ data-builder.html
 
 # GitHub push token (never commit)
 .github_token
+package-lock.json
