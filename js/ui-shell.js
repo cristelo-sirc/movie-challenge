@@ -199,20 +199,26 @@ const UIShell = (function () {
         wireWatchlist(root);
     }
 
-    // ---- "Want to See" watchlist (v3.5) ------------------------------------
-    function watchlistHTML() {
-        const ids = (typeof SlidingWindow !== 'undefined' && SlidingWindow.getWatchlist)
-            ? SlidingWindow.getWatchlist() : [];
-        const st = state(), seenSet = new Set(st.seen);
-        const ordered = ids.slice().reverse(); // newest first
+    // ---- "Want to See" watchlist (v3.5; v3.8 auto-groups by decade) ---------
+    const WL_GROUP_THRESHOLD = 8;            // group into decades once the list grows past this
+    const WL_COLLAPSE_KEY = 'pj_wl_collapsed';
 
-        const rows = ordered.map(id => {
-            const m = (typeof ItemManager !== 'undefined') ? ItemManager.getById(id) : null;
-            if (!m) return '';
-            const title = (typeof ItemManager !== 'undefined' && ItemManager.getTitle) ? ItemManager.getTitle(m) : (m.title || '');
-            const seenTag = seenSet.has(id) ? '<span class="pj-wl-seen">Seen ✓</span>' : '';
-            const strm = (typeof Streaming !== 'undefined' && Streaming.renderRowHTML) ? Streaming.renderRowHTML(id) : '';
-            return `<div class="pj-wl-row">
+    function wlCollapsed() {
+        try { return JSON.parse(localStorage.getItem(WL_COLLAPSE_KEY)) || {}; }
+        catch (e) { return {}; }
+    }
+    function wlSetCollapsed(map) {
+        try { localStorage.setItem(WL_COLLAPSE_KEY, JSON.stringify(map)); } catch (e) { /* ignore */ }
+    }
+
+    // One "Want to See" row.
+    function wlRowHTML(id, seenSet) {
+        const m = (typeof ItemManager !== 'undefined') ? ItemManager.getById(id) : null;
+        if (!m) return '';
+        const title = (typeof ItemManager !== 'undefined' && ItemManager.getTitle) ? ItemManager.getTitle(m) : (m.title || '');
+        const seenTag = seenSet.has(id) ? '<span class="pj-wl-seen">Seen ✓</span>' : '';
+        const strm = (typeof Streaming !== 'undefined' && Streaming.renderRowHTML) ? Streaming.renderRowHTML(id) : '';
+        return `<div class="pj-wl-row">
         <span class="pj-wl-thumb">${imgTag(m, 'w92')}</span>
         <span class="pj-wl-info">
           <span class="pj-wl-title">${esc(title)}</span>
@@ -223,15 +229,49 @@ const UIShell = (function () {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`;
-        }).join('');
+    }
 
+    function watchlistHTML() {
+        const ids = (typeof SlidingWindow !== 'undefined' && SlidingWindow.getWatchlist)
+            ? SlidingWindow.getWatchlist() : [];
+        const st = state(), seenSet = new Set(st.seen);
+        const ordered = ids.slice().reverse(); // newest first
         const count = ordered.length;
-        const body = count
-            ? `<div class="pj-wl-list">${rows}</div>`
-            : `<div class="pj-wl-empty">
+
+        let body;
+        if (!count) {
+            body = `<div class="pj-wl-empty">
            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
            <p>Tap the bookmark on any movie in <b>Review</b> to save films you want to watch.</p>
          </div>`;
+        } else if (count <= WL_GROUP_THRESHOLD) {
+            // A few films — a simple flat list reads best.
+            body = `<div class="pj-wl-list">${ordered.map(id => wlRowHTML(id, seenSet)).join('')}</div>`;
+        } else {
+            // Longer list — group into collapsible decade sections so it stays scannable.
+            const collapsed = wlCollapsed();
+            const byEra = {};
+            for (const id of ordered) {
+                const m = (typeof ItemManager !== 'undefined') ? ItemManager.getById(id) : null;
+                if (!m) continue;
+                const era = eraOf(m);
+                (byEra[era] = byEra[era] || []).push(id);
+            }
+            const eraIds = Object.keys(byEra).sort((a, b) => (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0)); // newest decade first
+            const secs = eraIds.map(era => {
+                const isCol = !!collapsed[era];
+                const rows = byEra[era].map(id => wlRowHTML(id, seenSet)).join('');
+                return `<div class="pj-wl-sec${isCol ? ' collapsed' : ''}" data-era="${esc(era)}">
+              <button class="pj-wl-sec-h" aria-expanded="${isCol ? 'false' : 'true'}">
+                <span class="pj-wl-sec-t">${esc(era)}</span>
+                <span class="pj-wl-sec-n">${byEra[era].length}</span>
+                <svg class="pj-wl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="pj-wl-sec-body">${rows}</div>
+            </div>`;
+            }).join('');
+            body = `<div class="pj-wl-list pj-wl-grouped">${secs}</div>`;
+        }
 
         return `<div class="pj-kicker muted pj-wl-k" style="margin:20px 0 8px">Want to See${count ? ` <span class="pj-wl-count">${count}</span>` : ''}</div>
       <div class="pj-card pj-wl">${body}</div>`;
@@ -246,6 +286,16 @@ const UIShell = (function () {
                 if (window.AppBridge && AppBridge.toggleWatchlist) AppBridge.toggleWatchlist(id);
                 else if (typeof SlidingWindow !== 'undefined' && SlidingWindow.toggleWatchlist) SlidingWindow.toggleWatchlist(id);
                 renderDiary();
+            });
+        });
+        // v3.8: collapse/expand a decade section (CSS toggle, no re-render) and
+        // remember the choice across sessions.
+        root.querySelectorAll('.pj-wl-sec-h').forEach(h => {
+            h.addEventListener('click', () => {
+                const sec = h.closest('.pj-wl-sec'); if (!sec) return;
+                const nowCollapsed = sec.classList.toggle('collapsed');
+                h.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+                const map = wlCollapsed(); map[sec.dataset.era] = nowCollapsed; wlSetCollapsed(map);
             });
         });
     }

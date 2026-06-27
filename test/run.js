@@ -272,6 +272,60 @@ async function run() {
         app.close();
     }
 
+    // ===================================================================
+    SECTION('Phase 3 — aligned control row');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const row = d.querySelector('#cardStack .movie-card .pj-controls');
+        ok('Save/Watch/Info wrapped in one control row', !!row);
+        const order = row ? Array.from(row.children).map(c => c.className.split(' ')[0]) : [];
+        ok('row order is bookmark, watch, info (left/center/right)',
+            order.join(',') === 'pj-bookmark,watch-btn,info-btn', order.join(','));
+
+        // The buttons still work after the markup change.
+        const card = d.querySelector('#cardStack .movie-card');
+        d.querySelector('.info-btn').click();
+        ok('Info still flips to the synopsis (no streaming)',
+            card.classList.contains('flipped') && !card.classList.contains('show-watch'));
+        app.close();
+    }
+
+    // ===================================================================
+    SECTION('Phase 3 — Diary "Want to See" grouping');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const IM = w.__app.ItemManager;
+        const all = IM.getAll();
+        const pick = (era, n) => all.filter(m => IM.getEraId(m) === era).slice(0, n).map(m => m.id);
+
+        // Flat below the threshold.
+        pick('1980s', 4).forEach(id => w.AppBridge.toggleWatchlist(id));
+        w.UIShell.switchTo('diary'); await sleep(60);
+        ok('short watchlist stays a flat list', d.querySelectorAll('#diaryRoot .pj-wl-sec').length === 0);
+        ok('flat list renders rows', d.querySelectorAll('#diaryRoot .pj-wl-row').length === 4);
+
+        // Grow past the threshold across two decades → grouped sections.
+        pick('2010s', 6).forEach(id => w.AppBridge.toggleWatchlist(id));
+        w.UIShell.switchTo('review'); w.UIShell.switchTo('diary'); await sleep(60);
+        const secs = d.querySelectorAll('#diaryRoot .pj-wl-sec');
+        ok('long watchlist groups into decade sections', secs.length >= 2, 'sections=' + secs.length);
+        ok('section shows its decade label + count',
+            !!d.querySelector('#diaryRoot .pj-wl-sec-t') && !!d.querySelector('#diaryRoot .pj-wl-sec-n'));
+
+        // Collapse toggles + persists.
+        const hdr = d.querySelector('#diaryRoot .pj-wl-sec-h');
+        const sec = hdr.closest('.pj-wl-sec'); const era = sec.dataset.era;
+        hdr.click();
+        ok('clicking a header collapses its section', sec.classList.contains('collapsed'));
+        const stored = JSON.parse(w.localStorage.getItem('pj_wl_collapsed') || '{}');
+        ok('collapse choice is remembered', stored[era] === true, JSON.stringify(stored));
+        app.close();
+    }
+
     report();
 }
 

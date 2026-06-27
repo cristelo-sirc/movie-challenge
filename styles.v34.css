@@ -18,7 +18,7 @@ body[data-pj]{
   --bg-void:#080809; --bg-surface:#18191c; --bg-elevated:#202125;
   --accent-seen:#2fd18b; --accent-skip:#f0656f; --accent-undo:#8d877e;
   --text-primary:#f7f1e8; --text-secondary:#b8b1a8; --text-muted:#8d877e;
-  --card-width:min(252px,62vw); --card-height:calc(var(--card-width) * 1.5);
+  --card-width:min(300px,72vw); --card-height:calc(var(--card-width) * 1.5); /* v3.8: larger poster */
   background:var(--pj-bg-0); color:var(--pj-tx-0);
 }
 body[data-pj].has-bg::after{ display:none; } /* suppress any global bg layer from styles.css */
@@ -237,7 +237,7 @@ body[data-pj] .advanced-export summary{ font-size:12.5px; color:var(--pj-tx-2); 
 }
 /* ---------- short screens ---------- */
 @media (max-height:680px){
-  body[data-pj]{ --card-width:min(212px,52vw); }
+  body[data-pj]{ --card-width:min(236px,58vw); } /* v3.8: larger, still fits short screens */
   .pj-year{ font-size:26px; }
 }
 
@@ -354,8 +354,8 @@ body[data-pj] .movie-card.swipe-left{ animation:swipeLeft .18s var(--ease-out-ex
 
 /* ---- Poster bookmark (quick "Want to See" tap) ---- */
 body[data-pj] .pj-bookmark{
-  position:absolute; top:14px; left:14px; z-index:11;
-  width:38px; height:38px; display:grid; place-items:center;
+  flex:0 0 auto;                         /* v3.8: now a child of .pj-controls */
+  width:36px; height:36px; display:grid; place-items:center;
   background:rgba(0,0,0,.55); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
   border:1px solid rgba(255,255,255,.28); border-radius:50%; color:#fff; cursor:pointer;
   transition:transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease; }
@@ -415,6 +415,19 @@ body[data-pj] .pj-wl-empty svg{ color:var(--pj-amber); margin-bottom:8px; }
 body[data-pj] .pj-wl-empty p{ font-size:13px; line-height:1.5; margin:0; }
 body[data-pj] .pj-wl-empty b{ color:var(--pj-tx-1); }
 
+/* v3.8: collapsible decade sections for a longer "Want to See" list */
+body[data-pj] .pj-wl-sec{ border-bottom:1px solid var(--pj-line); }
+body[data-pj] .pj-wl-sec:last-child{ border-bottom:none; }
+body[data-pj] .pj-wl-sec-h{ width:100%; display:flex; align-items:center; gap:9px;
+  background:none; border:none; cursor:pointer; color:var(--pj-tx-0); font-family:inherit; padding:11px 4px; }
+body[data-pj] .pj-wl-sec-t{ font:700 13px/1 'Inter',sans-serif; letter-spacing:.02em; }
+body[data-pj] .pj-wl-sec-n{ min-width:20px; text-align:center; padding:1px 7px; border-radius:999px;
+  background:var(--pj-bg-3); color:var(--pj-tx-1); font:700 11px/1.6 'Inter',sans-serif; }
+body[data-pj] .pj-wl-chev{ width:18px; height:18px; margin-left:auto; color:var(--pj-tx-2); transition:transform .2s ease; }
+body[data-pj] .pj-wl-sec.collapsed .pj-wl-chev{ transform:rotate(-90deg); }
+body[data-pj] .pj-wl-sec.collapsed .pj-wl-sec-body{ display:none; }
+body[data-pj] .pj-wl-grouped .pj-wl-sec-body .pj-wl-row{ padding-left:4px; padding-right:4px; }
+
 /* ---- Settings: static (non-tappable) row ---- */
 body[data-pj] .pj-set-static{ cursor:default; }
 
@@ -424,16 +437,28 @@ body[data-pj] .pj-set-static{ cursor:default; }
 
 /* Watch pill: play icon + label, centered between Save (left) and Info (right) */
 body[data-pj] .watch-btn{
-  position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:11;
-  display:inline-flex; align-items:center; gap:5px;
+  display:inline-flex; align-items:center; gap:5px;   /* v3.8: now a child of .pj-controls */
   background:rgba(0,0,0,.6); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
   color:#fff; border:1px solid rgba(255,255,255,.3); padding:6px 12px 6px 11px; border-radius:20px;
   font:600 .8rem/1 'Inter',sans-serif; letter-spacing:.5px; text-transform:uppercase; cursor:pointer;
   transition:transform .15s ease, background .15s ease, border-color .15s ease; }
 body[data-pj] .watch-btn svg{ width:15px; height:15px; }
-body[data-pj] .watch-btn:active{ transform:translateX(-50%) scale(.94); }
+body[data-pj] .watch-btn:active{ transform:scale(.94); }
 @media (hover:hover){ body[data-pj] .watch-btn:hover{ background:rgba(0,0,0,.8); border-color:#fff; } }
 body[data-pj] .movie-card.flipped .watch-btn{ display:none; }
+
+/* v3.8: unify Save / Watch / Info into one aligned, evenly-spaced top row.
+   Replaces three independently-positioned controls (mismatched top offsets +
+   the small-screen Watch/Info overlap) with a single flex row. */
+body[data-pj] .pj-controls{
+  position:absolute; top:12px; left:12px; right:12px; z-index:11;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  pointer-events:none; /* gaps between controls don't catch taps */
+}
+body[data-pj] .pj-controls > *{ pointer-events:auto; }
+/* the Info pill was absolutely positioned in the base stylesheet — let it flow */
+body[data-pj] .pj-controls .info-btn{ position:static; top:auto; right:auto; left:auto; }
+body[data-pj] .movie-card.flipped .pj-controls{ display:none; }
 
 /* Two faces on the back: Info (default) vs Watch (when .show-watch is set) */
 body[data-pj] .card-back-watch{ display:none; }

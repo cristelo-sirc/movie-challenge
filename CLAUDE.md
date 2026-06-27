@@ -2,6 +2,38 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Bigger cards + aligned controls + Diary grouping (Jun 2026) — v3.8.0
+
+The visible UI pass. Scoped to `body[data-pj]` (presentation only).
+
+- **Bigger poster.** `--card-width` `min(252px,62vw) → min(300px,72vw)`; the
+  short-screen rule `min(212px,52vw) → min(236px,58vw)`. Peeks scale from the same
+  variable, so the side context grows with it.
+- **Aligned Save / Watch / Info row.** The three controls were independently
+  absolutely-positioned with mismatched top offsets (14/16px) and heights (38px
+  round vs ~28px pills), which is why they looked off. They're now wrapped in a
+  single `.pj-controls` flex row (`space-between`, `align-items:center`) pinned to
+  the card top — Save left, Watch center, Info right, evenly spaced and vertically
+  centered. This also removes the small-screen Watch/Info overlap the audit found
+  (the row reflows instead of overlapping). Markup change in `createCardElement`
+  (buttons wrapped + reordered); the per-button absolute positioning was stripped
+  in `styles.v34.css` and the base `.info-btn` position overridden.
+- **Diary "Want to See" auto-grouping.** A flat list up to 8 saved films; past
+  that it groups into **collapsible decade sections** (newest decade first, each
+  with a count), so a long list stays scannable. Collapsed/expanded state is
+  remembered in `localStorage` (`pj_wl_collapsed`); toggling is a CSS class flip
+  (no re-render, no scroll jump). Rows, the "Seen ✓" tag, streaming summaries, and
+  remove all work unchanged inside sections. `js/ui-shell.js` (`watchlistHTML`
+  refactor + `wlRowHTML`/`wlCollapsed` helpers + section wiring in `wireWatchlist`);
+  CSS in `styles.v34.css`.
+- Cache-bust `?v=40 → ?v=41`; label `v3.7.1 → v3.8.0`; `package.json` 3.8.0.
+- Validation: 40/40 harness checks, deterministic — new ones cover the control-row
+  structure + order + buttons still flipping, and Diary flat-vs-grouped at the
+  threshold + collapse persistence — plus `node --check`.
+- Needs Cris's eyes on a real device (the sandbox can't render/measure layout):
+  the exact card size, the three controls' spacing/alignment, side-peek crowding at
+  the larger size, and the grouped Diary on a real phone.
+
 ## Session: Correctness fixes from the audit (Jun 2026) — v3.7.1
 
 The eight confirmed bugs from the June audit. (The double-rate one was already

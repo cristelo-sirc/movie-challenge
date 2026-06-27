@@ -792,20 +792,23 @@
                         <p class="card-year">${ItemManager.getSubtitle(movie)}</p>
                     </div>
                     
-                    <button class="info-btn" aria-label="More Info">Info</button>
+                    <!-- v3.8: one aligned control row — Save (left), Watch (center), Info (right) -->
+                    <div class="pj-controls">
+                        <button class="pj-bookmark${isSaved ? ' is-saved' : ''}" aria-label="Save to Want to See" aria-pressed="${isSaved ? 'true' : 'false'}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
 
-                    <button class="watch-btn" aria-label="Where to watch">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="6 4 20 12 6 20 6 4"></polygon>
-                        </svg>
-                        <span>Watch</span>
-                    </button>
+                        <button class="watch-btn" aria-label="Where to watch">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                            </svg>
+                            <span>Watch</span>
+                        </button>
 
-                    <button class="pj-bookmark${isSaved ? ' is-saved' : ''}" aria-label="Save to Want to See" aria-pressed="${isSaved ? 'true' : 'false'}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </button>
+                        <button class="info-btn" aria-label="More Info">Info</button>
+                    </div>
 
                     <div class="swipe-indicator seen">SEEN</div>
                     <div class="swipe-indicator skip">NOPE</div>
