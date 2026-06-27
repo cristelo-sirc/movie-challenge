@@ -1,6 +1,6 @@
 {
   "name": "movie-quiz",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Poster Journal — a local-first movie review challenge (vanilla JS).",
   "private": true,
   "scripts": {

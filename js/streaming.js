@@ -25,6 +25,7 @@ const Streaming = (function () {
     let map = null;          // id (string) -> { link, stream[], free[], rent[], buy[] }
     let ready = false;       // data fetch has resolved (success OR failure)
     let loadError = false;   // fetch failed (offline / missing file)
+    let loadStarted = false; // v3.7: lazy — the 1.4MB file loads on first use only
     const pending = [];      // containers awaiting first load: [{ el, id }]
     const readyCbs = [];     // listeners fired once data resolves
 
@@ -47,7 +48,17 @@ const Streaming = (function () {
             .catch(function () { map = {}; ready = true; loadError = true; flush(); });
     }
 
+    // v3.7: start the (deferred) fetch the first time anything actually needs
+    // streaming data — i.e. the user taps Watch or opens the Diary. A session
+    // that only rates movies never downloads the 1.4MB map.
+    function ensureLoaded() {
+        if (loadStarted) return;
+        loadStarted = true;
+        load();
+    }
+
     function get(id) {
+        ensureLoaded();
         if (!map) return null;
         return map[String(id)] || null;
     }
@@ -122,6 +133,7 @@ const Streaming = (function () {
     // upgrade it once the fetch resolves.
     function renderInto(el, id) {
         if (!el) return;
+        ensureLoaded();   // v3.7: the Watch panel asking to render is what kicks off the load
         el.innerHTML = renderPanelHTML(id);
         if (!ready) pending.push({ el: el, id: id });
     }
@@ -153,17 +165,21 @@ const Streaming = (function () {
 
     // Register a callback to run once the data resolves (or immediately if it
     // already has). Lets the Diary refresh its summaries when data lands.
+    // Passive listener — does NOT itself trigger the (deferred) load. It fires
+    // when some real consumer (Watch panel / Diary row) has caused the data to
+    // load and resolve. Registering it at app boot must stay free.
     function onReady(cb) {
         if (typeof cb !== 'function') return;
         if (ready) { try { cb(); } catch (e) { /* no-op */ } }
         else readyCbs.push(cb);
     }
 
-    // Kick off the load as soon as the script runs.
-    load();
+    // v3.7: no eager load() here anymore — see ensureLoaded(). The data is
+    // fetched the first time the Watch panel or Diary asks for it.
 
     return {
         load: load,
+        ensureLoaded: ensureLoaded,
         get: get,
         renderHTML: renderHTML,
         renderPanelHTML: renderPanelHTML,

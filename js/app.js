@@ -100,6 +100,11 @@
     // Preloaded images cache
     const imageCache = new Map();
 
+    // ===== Card-transition state (v3.7) =====
+    let isTransitioning = false;  // guards against double-rate from rapid taps/keys
+    let lastRenderSig = null;     // ids of the last rendered window — skip redundant rebuilds
+    let flyLayer = null;          // overlay that holds the outgoing card during its fly-off
+
     // Current mode for code input
     let codeInputMode = null; // 'export' or 'import'
 
@@ -689,6 +694,14 @@
      * @param {Array} movies - Movies to render
      */
     function renderCards(movies) {
+        // v3.7: skip the full rebuild when the visible window is unchanged (e.g. a
+        // background decade chunk was appended out of view). Card content is a pure
+        // function of the movie id (the saved-bookmark state is toggled in place),
+        // so identical ids => identical cards => no work needed.
+        const sig = movies.map(m => m && m.id).join(',');
+        if (sig === lastRenderSig && elements.cardStack.firstElementChild) return;
+        lastRenderSig = sig;
+
         // Clear existing cards
         elements.cardStack.innerHTML = '';
 
@@ -749,11 +762,13 @@
         card.innerHTML = `
             <div class="card-inner">
                 <div class="card-front">
-                    <img 
-                        class="card-poster" 
-                        src="${getPosterUrl(movie)}" 
+                    <img
+                        class="card-poster"
+                        src="${getPosterUrl(movie)}"
                         alt="${movie.title} poster"
                         loading="${isTop ? 'eager' : 'lazy'}"
+                        decoding="async"
+                        ${isTop ? 'fetchpriority="high"' : ''}
                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 600%22><rect fill=%22%231a1a1a%22 width=%22400%22 height=%22600%22/><text x=%22200%22 y=%22300%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2224%22>No Poster</text></svg>'"
                     >
                     <div class="card-overlay">
@@ -842,6 +857,14 @@
                 watchBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    // v3.7: render streaming lazily on first Watch tap (this is what
+                    // triggers the deferred data load — see Streaming.ensureLoaded).
+                    const streamEl = card.querySelector('.card-watch-stream');
+                    if (streamEl && !streamEl.dataset.rendered &&
+                        window.Streaming && typeof Streaming.renderInto === 'function') {
+                        streamEl.dataset.rendered = '1';
+                        Streaming.renderInto(streamEl, movie.id);
+                    }
                     card.classList.add('show-watch'); // show the Watch (streaming) panel
                     card.classList.add('flipped');
                 });
@@ -871,15 +894,14 @@
                 });
             }
 
-            // v3.6: fill the streaming ("Where to watch") block in the Watch panel.
+            // v3.6: the streaming ("Where to watch") block lives in the Watch panel.
+            // v3.7: it is now filled lazily on the first Watch tap (handler above),
+            // so a session that never opens Watch never downloads the streaming map.
             const streamEl = card.querySelector('.card-watch-stream');
             if (streamEl) {
                 // taps inside the streaming block (e.g. a provider link) must not
                 // bubble up and flip the card back
                 streamEl.addEventListener('click', (e) => e.stopPropagation());
-                if (window.Streaming && typeof Streaming.renderInto === 'function') {
-                    Streaming.renderInto(streamEl, movie.id);
-                }
             }
         }
 
@@ -1898,12 +1920,18 @@ ${baseUrl}`;
      * @param {string} direction - 'left' or 'right'
      */
     function animateButtonSwipe(direction) {
+        // v3.7: input guard — a rapid double-tap or key repeat can't rate twice.
+        if (isTransitioning) return;
         const topCard = elements.cardStack.firstElementChild;
         if (!topCard || SlidingWindow.isComplete()) return;
 
-        topCard.classList.add(direction === 'right' ? 'swipe-right' : 'swipe-left');
+        isTransitioning = true;
+        // Schedule the release FIRST so the guard can never stick, even if an
+        // advance below were to throw (fallback for a missing animationend, too).
+        setTimeout(() => { isTransitioning = false; }, 200);
 
-        // Play audio and track gamification
+        // Audio + gamification for the movie being rated (must run BEFORE we
+        // advance, while it is still the current item).
         if (direction === 'right') {
             AudioManager.playSeenSound();
             handleSeenAction();
@@ -1912,17 +1940,50 @@ ${baseUrl}`;
             handleSkipAction();
         }
 
-        // v3.4: the next card renders after this delay (paired with the fly-off
-        // animation). The Poster Journal page uses a snappier 160ms; the legacy
-        // page keeps its original 300ms (its animation is still 0.4s).
-        const advanceDelay = document.body.hasAttribute('data-pj') ? 160 : 300;
-        setTimeout(() => {
-            if (direction === 'right') {
-                SlidingWindow.markSeen();
-            } else {
-                SlidingWindow.markNotSeen();
-            }
-        }, advanceDelay);
+        // v3.7: reveal the next card immediately. The outgoing card flies off on
+        // its own overlay layer while the next poster renders underneath at once —
+        // no fixed wait-for-animation timer (the old model waited 160ms first).
+        flyOffCard(topCard, direction);
+        if (direction === 'right') {
+            SlidingWindow.markSeen();
+        } else {
+            SlidingWindow.markNotSeen();
+        }
+    }
+
+    /**
+     * v3.7 — Clone the just-rated card onto a fixed overlay and let it finish its
+     * swipe animation independently, so the next card can appear instantly under
+     * it. Purely cosmetic — wrapped so it can never block or break the rating.
+     * @param {HTMLElement} cardEl
+     * @param {string} direction - 'left' or 'right'
+     */
+    function flyOffCard(cardEl, direction) {
+        try {
+            const rect = cardEl.getBoundingClientRect();
+            if (!rect || !rect.width) return;   // no layout (e.g. test env) — skip the effect
+            const clone = cardEl.cloneNode(true);
+            clone.classList.remove('flipped', 'show-watch', 'iconic-reveal');
+            clone.classList.add(direction === 'right' ? 'swipe-right' : 'swipe-left');
+            clone.style.cssText +=
+                ';position:fixed;margin:0;pointer-events:none;z-index:50;' +
+                'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+                'width:' + rect.width + 'px;height:' + rect.height + 'px;';
+            const layer = getFlyLayer();
+            layer.appendChild(clone);
+            const done = () => { if (clone.parentNode) clone.parentNode.removeChild(clone); };
+            clone.addEventListener('animationend', done);
+            setTimeout(done, 450);
+        } catch (e) { /* cosmetic only — ignore */ }
+    }
+
+    function getFlyLayer() {
+        if (flyLayer && flyLayer.parentNode) return flyLayer;
+        flyLayer = document.createElement('div');
+        flyLayer.className = 'pj-fly-layer';
+        flyLayer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden;';
+        document.body.appendChild(flyLayer);
+        return flyLayer;
     }
 
     /**
@@ -1948,7 +2009,11 @@ ${baseUrl}`;
         movies.forEach(movie => {
             if (!imageCache.has(movie.id)) {
                 const img = new Image();
+                img.decoding = 'async';
                 img.src = getPosterUrl(movie);
+                // v3.7: decode ahead of time so the next poster paints instantly
+                // instead of decoding on first display. Best-effort; ignore errors.
+                if (typeof img.decode === 'function') { img.decode().catch(() => {}); }
                 imageCache.set(movie.id, img);
             }
         });

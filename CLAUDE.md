@@ -2,6 +2,45 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Performance pass — instant card turnover (Jun 2026) — v3.7.0
+
+The first of the post-audit changes. Goal: make each rating feel instant and stop
+doing avoidable work, without changing the app's look. Scoped to the render/anim
+layer + streaming load timing; the swipe engine, storage, and share format are
+untouched.
+
+- **Instant next-card reveal (no advance timer).** `animateButtonSwipe` used to
+  wait a fixed 160ms before advancing, then rebuild the deck. It now advances
+  immediately so the next poster appears at once, and the OUTGOING card is cloned
+  onto a fixed overlay (`flyOffCard` → `.pj-fly-layer`) to finish its swipe
+  animation independently. Cleanup is on `animationend` with a 450ms fallback.
+- **Input guard (fixes the double-rate bug).** A new `isTransitioning` flag makes
+  a rapid double-tap or key-repeat rate exactly one movie. The release timer is
+  scheduled the instant the guard is set, so it can never stick. Covers every live
+  rating path (Seen/Haven't-Seen buttons + A/D/arrow keys → all go through
+  `animateButtonSwipe`). (The only other `markSeen` callers are the long-dead,
+  never-attached swipe handlers.)
+- **Decoded image preload + priority.** `preloadImages` now sets `decoding:'async'`
+  and calls `img.decode()` so the next poster is decoded before it's shown; the top
+  poster gets `fetchpriority="high"` + `decoding="async"`.
+- **Deferred streaming load.** `js/streaming.js` no longer fetches the 1.4MB
+  `streaming-us.json` at page load. A new `ensureLoaded()` fires on first real use —
+  the first **Watch** tap (`renderInto`) or the **Diary** rendering a watchlist row
+  (`get`). `onReady` stays a passive listener (must NOT trigger the load, since
+  UIShell registers one at boot). A session that only rates never downloads it.
+- **No rebuild when the window is unchanged.** `renderCards` skips the
+  destroy-and-rebuild when the visible window's ids match the last render — so a
+  background decade chunk landing out of view no longer rebuilds the card. Safe
+  because card content is a pure function of the movie id (the saved bookmark is
+  toggled in place, not via re-render).
+- Cache-bust `?v=38 → ?v=39`; version label `v3.6.0 → v3.7.0`; `package.json` 3.7.0.
+- Validation: 19/19 harness checks green and deterministic (incl. new ones:
+  double-tap rates once; next card revealed synchronously; unchanged window not
+  rebuilt; streaming NOT fetched at boot but IS after a Watch tap) + a 12-in-a-row
+  rapid-rating stress (seen +12, 0 errors, guard always releases) + `node --check`.
+- Can't be measured in the build sandbox (needs a real device): the actual
+  perceived speed-up and the fly-off animation's smoothness.
+
 ## Session: Single index file + committed test harness (Jun 2026) — housekeeping
 
 Prep for the v3.7/v3.8 work, addressing two long-standing smells.

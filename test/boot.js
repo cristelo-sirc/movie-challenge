@@ -70,9 +70,10 @@ function buildBundle(html) {
     return parts.join('\n;\n') + expose;
 }
 
-function installShims(window, errors) {
+function installShims(window, errors, fetched) {
     // Local-file fetch (maps data/* URLs to disk, ignores ?v= / cache opts).
     window.fetch = function (url) {
+        fetched.push(String(url).split('?')[0]);
         try {
             let p = String(url).split('?')[0].split('#')[0].replace(/^\.?\//, '');
             const text = fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -124,6 +125,7 @@ function boot(opts) {
     opts = opts || {};
     const html = readIndex();
     const errors = [];
+    const fetched = [];   // every URL the app fetched (for deferral assertions)
 
     // Capture uncaught exceptions thrown inside event handlers (jsdom routes
     // these to the virtual console as 'jsdomError') so the suite fails loudly
@@ -136,7 +138,7 @@ function boot(opts) {
         pretendToBeVisual: true,
         url: 'https://localhost/',
         virtualConsole: vc,
-        beforeParse(window) { installShims(window, errors); }
+        beforeParse(window) { installShims(window, errors, fetched); }
     });
 
     const window = dom.window;
@@ -163,7 +165,7 @@ function boot(opts) {
             const fullyLoaded = app.DataLoader && app.DataLoader.isFullyLoaded;
             if (ready && (opts.waitFullyLoaded ? fullyLoaded : true)) {
                 return resolve({
-                    dom, window, document: window.document, errors,
+                    dom, window, document: window.document, errors, fetched,
                     close: () => dom.window.close()
                 });
             }

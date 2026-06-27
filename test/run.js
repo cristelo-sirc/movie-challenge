@@ -89,6 +89,63 @@ async function run() {
         app.close();
     }
 
+    // ===================================================================
+    SECTION('Phase 1 — performance + input guard (v3.7.0)');
+    // ===================================================================
+    {
+        const app = await boot();
+        const { window: w, document: d } = app;
+
+        // Guard: two synchronous taps rate exactly ONE movie (was the double-rate bug).
+        const seenBefore = SW(w).getProgress().seen;
+        const seenBtn = d.getElementById('seenBtn');
+        seenBtn.click(); seenBtn.click();          // rapid double-tap, same tick
+        await sleep(40);
+        ok('double-tap rates only once (input guard)',
+            SW(w).getProgress().seen === seenBefore + 1,
+            'seen=' + SW(w).getProgress().seen + ' expected ' + (seenBefore + 1));
+        await sleep(260);                           // let the 200ms guard release
+
+        // Instant reveal: the next card is in the DOM synchronously after the tap,
+        // with no wait-for-timer (the old model needed ~160ms before advancing).
+        const t0 = title(d);
+        d.getElementById('seenBtn').click();        // no await after this
+        ok('next card revealed instantly (no advance timer)',
+            title(d) && title(d) !== t0, 'before=' + t0 + ' immediate=' + title(d));
+        await sleep(260);
+
+        // Redundant rebuild skipped: a chunk-arrival update with an unchanged
+        // visible window must not destroy/recreate the current card element.
+        const cardEl = d.querySelector('#cardStack .movie-card');
+        cardEl.dataset.probe = 'keep';
+        SW(w).notifyItemsAppended();                // simulates a background chunk landing
+        await sleep(40);
+        const cardAfter = d.querySelector('#cardStack .movie-card');
+        ok('unchanged window is not rebuilt',
+            cardAfter && cardAfter.dataset.probe === 'keep');
+
+        ok('no errors during Phase 1 interactions', app.errors.length === 0, app.errors.join('\n'));
+        app.close();
+    }
+
+    // ===================================================================
+    SECTION('Phase 1 — streaming data is deferred until needed');
+    // ===================================================================
+    {
+        const app = await boot();
+        const hit = (u) => u.includes('streaming-us.json');
+
+        ok('streaming map NOT downloaded at page load',
+            !app.fetched.some(hit), app.fetched.filter(u => u.includes('streaming')).join(','));
+
+        const watch = app.document.querySelector('.watch-btn');
+        ok('Watch button present on the card', !!watch);
+        if (watch) watch.click();                   // first Watch tap should trigger the load
+        await sleep(150);
+        ok('streaming map downloaded after opening Watch', app.fetched.some(hit));
+        app.close();
+    }
+
     report();
 }
 
