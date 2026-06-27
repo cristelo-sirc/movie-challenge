@@ -2,6 +2,22 @@
 
 This document tracks AI-assisted development work on this project.
 
+## Session: Diary grouping tweaks (Jun 2026) — v3.8.1
+
+Two small follow-ups to the v3.8.0 "Want to See" grouping, per Cris.
+
+- **Threshold 8 → 5.** Grouping now kicks in once the list is longer than 5 (i.e.
+  6+ saved films); 5 or fewer stays a flat list. `WL_GROUP_THRESHOLD` in
+  `js/ui-shell.js`.
+- **Sections default to collapsed.** A long list now opens as a tidy set of decade
+  headers. `isCol` defaults to `true` unless the user has explicitly toggled that
+  decade (stored in `pj_wl_collapsed`), so an explicit expand/collapse still
+  persists and wins over the default.
+- Cache-bust `?v=41 → ?v=42`; label `v3.8.0 → v3.8.1`; `package.json` 3.8.1.
+- Validation: 43/43 harness checks, deterministic — grouping section updated to
+  cover the 5-vs-6 boundary, default-collapsed, and expand-then-collapse
+  persistence — plus `node --check`.
+
 ## Session: Bigger cards + aligned controls + Diary grouping (Jun 2026) — v3.8.0
 
 The visible UI pass. Scoped to `body[data-pj]` (presentation only).

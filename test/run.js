@@ -302,27 +302,35 @@ async function run() {
         const all = IM.getAll();
         const pick = (era, n) => all.filter(m => IM.getEraId(m) === era).slice(0, n).map(m => m.id);
 
-        // Flat below the threshold.
-        pick('1980s', 4).forEach(id => w.AppBridge.toggleWatchlist(id));
+        // Flat at/below the threshold (<=5).
+        pick('1980s', 5).forEach(id => w.AppBridge.toggleWatchlist(id));
         w.UIShell.switchTo('diary'); await sleep(60);
-        ok('short watchlist stays a flat list', d.querySelectorAll('#diaryRoot .pj-wl-sec').length === 0);
-        ok('flat list renders rows', d.querySelectorAll('#diaryRoot .pj-wl-row').length === 4);
+        ok('5 films stay a flat list (threshold is 5)', d.querySelectorAll('#diaryRoot .pj-wl-sec').length === 0);
+        ok('flat list renders rows', d.querySelectorAll('#diaryRoot .pj-wl-row').length === 5);
 
-        // Grow past the threshold across two decades → grouped sections.
-        pick('2010s', 6).forEach(id => w.AppBridge.toggleWatchlist(id));
+        // A 6th film (>5), in a second decade → grouped sections.
+        pick('2010s', 1).forEach(id => w.AppBridge.toggleWatchlist(id));
         w.UIShell.switchTo('review'); w.UIShell.switchTo('diary'); await sleep(60);
         const secs = d.querySelectorAll('#diaryRoot .pj-wl-sec');
-        ok('long watchlist groups into decade sections', secs.length >= 2, 'sections=' + secs.length);
+        ok('6 films group into decade sections', secs.length >= 2, 'sections=' + secs.length);
         ok('section shows its decade label + count',
             !!d.querySelector('#diaryRoot .pj-wl-sec-t') && !!d.querySelector('#diaryRoot .pj-wl-sec-n'));
 
-        // Collapse toggles + persists.
+        // v3.8.1: sections default to COLLAPSED.
+        ok('decade sections default to collapsed',
+            Array.from(secs).every(s => s.classList.contains('collapsed')));
+
+        // First click EXPANDS (since default is collapsed); the choice persists.
         const hdr = d.querySelector('#diaryRoot .pj-wl-sec-h');
         const sec = hdr.closest('.pj-wl-sec'); const era = sec.dataset.era;
         hdr.click();
-        ok('clicking a header collapses its section', sec.classList.contains('collapsed'));
-        const stored = JSON.parse(w.localStorage.getItem('pj_wl_collapsed') || '{}');
-        ok('collapse choice is remembered', stored[era] === true, JSON.stringify(stored));
+        ok('clicking a collapsed header expands it', !sec.classList.contains('collapsed'));
+        let stored = JSON.parse(w.localStorage.getItem('pj_wl_collapsed') || '{}');
+        ok('expanded choice is remembered (false)', stored[era] === false, JSON.stringify(stored));
+        hdr.click();
+        ok('clicking again collapses it', sec.classList.contains('collapsed'));
+        stored = JSON.parse(w.localStorage.getItem('pj_wl_collapsed') || '{}');
+        ok('collapsed choice is remembered (true)', stored[era] === true, JSON.stringify(stored));
         app.close();
     }
 

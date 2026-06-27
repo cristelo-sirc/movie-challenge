@@ -200,7 +200,7 @@ const UIShell = (function () {
     }
 
     // ---- "Want to See" watchlist (v3.5; v3.8 auto-groups by decade) ---------
-    const WL_GROUP_THRESHOLD = 8;            // group into decades once the list grows past this
+    const WL_GROUP_THRESHOLD = 5;            // group into decades once the list grows past this (6+)
     const WL_COLLAPSE_KEY = 'pj_wl_collapsed';
 
     function wlCollapsed() {
@@ -259,7 +259,9 @@ const UIShell = (function () {
             }
             const eraIds = Object.keys(byEra).sort((a, b) => (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0)); // newest decade first
             const secs = eraIds.map(era => {
-                const isCol = !!collapsed[era];
+                // v3.8.1: decades default to COLLAPSED; only an explicit user choice
+                // (stored) overrides that, so the list opens as a tidy set of headers.
+                const isCol = Object.prototype.hasOwnProperty.call(collapsed, era) ? !!collapsed[era] : true;
                 const rows = byEra[era].map(id => wlRowHTML(id, seenSet)).join('');
                 return `<div class="pj-wl-sec${isCol ? ' collapsed' : ''}" data-era="${esc(era)}">
               <button class="pj-wl-sec-h" aria-expanded="${isCol ? 'false' : 'true'}">
