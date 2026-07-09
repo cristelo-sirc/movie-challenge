@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Phase** | Live — maintenance & polish |
-| **Version** | v3.8.1 |
-| **Updated** | June 27, 2026 |
+| **Version** | v3.9.0 |
+| **Updated** | July 9, 2026 |
 | **One-liner** | Local-first movie review app (Poster Journal) covering **4,719 films, 1980–2025**. Live on GitHub Pages; recent work has been a post-audit performance/correctness pass and UI polish. |
 | **TMDB Key** | Local scripts read `.tmdb_key` (gitignored). CI streaming refresh reads the repo secret `TMDB_KEY`. |
 
@@ -33,6 +33,7 @@ Full audit: [`docs/archive/AUDIT-REPORT-2026-06-26.txt`](archive/AUDIT-REPORT-20
 <summary><strong>✅ Completed Features</strong></summary>
 
 ### App / UI
+- **Start Here intro (v3.9):** a first-visit overlay explaining the app (rate the poster, explore via Info/Watch/Save, track patterns in Diary/Decades), with a "Go to Settings first" option. Shows once per device, reopenable anytime from Settings.
 - **Poster Journal UI (v3.4):** four-tab app — Review · Diary · Decades · Settings — replacing the old single-screen + overlay layout.
 - **Rating:** tap **Seen** / **Haven't Seen** (or A / D / arrow keys), with **Undo**. *(Swipe-to-rate was removed in v3.4.)*
 - **The card:** **Info** flips to synopsis / cast / rating; **Watch** shows where-to-watch; **Save** bookmarks to Want to See.
