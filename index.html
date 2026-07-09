@@ -13,8 +13,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=43">
-    <link rel="stylesheet" href="styles.v34.css?v=43">
+    <link rel="stylesheet" href="styles.css?v=44">
+    <link rel="stylesheet" href="styles.v34.css?v=44">
 </head>
 
 <body data-pj="1">
@@ -228,6 +228,22 @@
             </div>
 
             <div class="pj-set-sec">
+                <h4>Help</h4>
+                <button class="pj-set-row" id="replayIntroBtn" aria-label="Show the Start Here intro again">
+                    <span class="l">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Show the intro again
+                    </span>
+                    <span class="pj-set-hint">Tap to view</span>
+                </button>
+            </div>
+
+            <div class="pj-set-sec">
                 <h4>Where to watch</h4>
                 <p class="section-desc">Streaming availability is shown on each movie's info side and your Want&nbsp;to&nbsp;See list.</p>
                 <div class="pj-set-row pj-set-static">
@@ -287,7 +303,7 @@
                 <h4>Danger zone</h4>
                 <button class="btn btn-danger pj-wide" id="resetProgressBtn">Reset all progress</button>
             </div>
-            <p class="pj-version">Poster Journal · v3.8.2</p>
+            <p class="pj-version">Poster Journal · v3.9.0</p>
         </section>
 
         <!-- ===================== BOTTOM NAV ===================== -->
@@ -325,6 +341,41 @@
                 </svg><span>Settings</span>
             </button>
         </nav>
+
+        <!-- ===================== Start Here (first-visit intro) ===================== -->
+        <div class="modal-overlay hidden" id="onboardOverlay">
+            <div class="modal pj-onboard" id="onboardModal">
+                <div class="pj-onboard-body">
+                    <p class="pj-onboard-eyebrow">Start Here</p>
+                    <h2 class="pj-onboard-title">Your movie journal,<br>one poster at a time.</h2>
+                    <hr class="pj-onboard-rule">
+                    <p class="pj-onboard-sub">There's no account. Your progress saves automatically on this
+                        device.</p>
+                    <ol class="pj-onboard-steps">
+                        <li>
+                            <span class="pj-onboard-num">1</span>
+                            <span class="pj-onboard-txt"><strong>Rate the poster</strong><br><span
+                                    class="pj-onboard-d">Choose Seen or Haven't Seen.</span></span>
+                        </li>
+                        <li>
+                            <span class="pj-onboard-num">2</span>
+                            <span class="pj-onboard-txt"><strong>Explore a movie</strong><br><span
+                                    class="pj-onboard-d">Use Info, Watch, or Save it for later.</span></span>
+                        </li>
+                        <li>
+                            <span class="pj-onboard-num">3</span>
+                            <span class="pj-onboard-txt"><strong>See your story grow</strong><br><span
+                                    class="pj-onboard-d">Diary and Decades reveal your movie patterns.</span></span>
+                        </li>
+                    </ol>
+                    <div class="pj-onboard-actions">
+                        <button class="btn btn-primary pj-wide" id="onboardStartBtn">Start reviewing</button>
+                        <button class="btn btn-secondary pj-wide" id="onboardSettingsBtn" data-go="settings">Go to
+                            Settings first</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- ===================== Decade Picker (filter) ===================== -->
         <div class="modal-overlay hidden" id="decadeOverlay">
@@ -414,30 +465,30 @@
     <script src="js/lib/qrcode.min.js"></script>
 
     <!-- Configuration -->
-    <script src="config/challenge.config.js?v=43"></script>
-    <script src="js/core/config-loader.js?v=43"></script>
+    <script src="config/challenge.config.js?v=44"></script>
+    <script src="js/core/config-loader.js?v=44"></script>
 
     <!-- Static content data -->
-    <script src="data/year-facts.js?v=43"></script>
+    <script src="data/year-facts.js?v=44"></script>
 
     <!-- Core modules -->
-    <script src="js/core/data-loader.js?v=43"></script>
-    <script src="js/core/item-manager.js?v=43"></script>
-    <script src="js/sliding-window.js?v=43"></script>
-    <script src="js/storage.js?v=43"></script>
+    <script src="js/core/data-loader.js?v=44"></script>
+    <script src="js/core/item-manager.js?v=44"></script>
+    <script src="js/sliding-window.js?v=44"></script>
+    <script src="js/storage.js?v=44"></script>
 
     <!-- Feature modules -->
-    <script src="js/audio-manager.js?v=43"></script>
-    <script src="js/theme-manager.js?v=43"></script>
-    <script src="js/gamification.js?v=43"></script>
-    <script src="js/stats-engine.js?v=43"></script>
-    <script src="js/streaming.js?v=43"></script>
+    <script src="js/audio-manager.js?v=44"></script>
+    <script src="js/theme-manager.js?v=44"></script>
+    <script src="js/gamification.js?v=44"></script>
+    <script src="js/stats-engine.js?v=44"></script>
+    <script src="js/streaming.js?v=44"></script>
 
     <!-- Main application -->
-    <script src="js/app.js?v=43"></script>
+    <script src="js/app.js?v=44"></script>
 
     <!-- Poster Journal UI shell (v3.4): bottom-nav tabs, Diary, Decades, ring/peeks -->
-    <script src="js/ui-shell.js?v=43"></script>
+    <script src="js/ui-shell.js?v=44"></script>
 </body>
 
 </html>

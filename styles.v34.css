@@ -477,3 +477,25 @@ body[data-pj] .pj-strm-sec.s-free .pj-strm-sec-h::before{ background:var(--pj-am
 body[data-pj] .pj-strm-sec.s-subscription .pj-strm-sec-h{ color:var(--pj-seen); }
 body[data-pj] .pj-strm-sec.s-subscription .pj-strm-sec-h::before{ background:var(--pj-seen); }
 body[data-pj] .pj-strm-panel .pj-prov{ font-size:13px; padding:5px 11px; }
+
+/* ---------- v3.9: Start Here (first-visit onboarding overlay) ---------- */
+.pj-onboard{ max-width:380px; }
+.pj-onboard-body{ padding:30px 26px 26px; text-align:center; }
+.pj-onboard-eyebrow{ font:700 .72rem/1 'Inter',sans-serif; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--pj-red); margin:0 0 10px; }
+.pj-onboard-title{ font-family:var(--pj-serif); font-weight:600; font-size:1.45rem; line-height:1.28;
+  color:var(--pj-tx-0); margin:0; }
+.pj-onboard-rule{ width:40px; height:2px; background:var(--pj-amber); border:none; margin:16px auto; }
+.pj-onboard-sub{ color:var(--pj-tx-1); font-size:.92rem; line-height:1.5; margin:0 0 20px; }
+.pj-onboard-steps{ list-style:none; margin:0 0 22px; padding:0; text-align:left; }
+.pj-onboard-steps li{ display:flex; gap:14px; align-items:flex-start; padding:13px 0;
+  border-top:1px solid var(--pj-line); }
+.pj-onboard-steps li:first-child{ border-top:none; padding-top:0; }
+.pj-onboard-num{ flex:0 0 auto; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--pj-red);
+  color:var(--pj-red); font-family:var(--pj-serif); font-weight:600; font-size:.95rem;
+  display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.pj-onboard-txt{ color:var(--pj-tx-0); font-size:.95rem; line-height:1.3; }
+.pj-onboard-txt strong{ font-family:var(--pj-serif); font-weight:600; font-size:1.02rem; }
+.pj-onboard-d{ color:var(--pj-tx-2); font-size:.85rem; }
+.pj-onboard-actions{ display:flex; flex-direction:column; gap:10px; }
+body[data-pj] .pj-onboard-actions .pj-wide{ margin-bottom:0; }

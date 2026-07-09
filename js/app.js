@@ -80,7 +80,12 @@
         statsYearsEmpty: document.getElementById('statsYearsEmpty'),
         emptySelectionState: document.getElementById('emptySelectionState'),
         emptyChooseBtn: document.getElementById('emptyChooseBtn'),
-        chooseDecadesBtn: document.getElementById('chooseDecadesBtn')
+        chooseDecadesBtn: document.getElementById('chooseDecadesBtn'),
+        // v3.9 — Start Here (first-visit onboarding overlay)
+        onboardOverlay: document.getElementById('onboardOverlay'),
+        onboardStartBtn: document.getElementById('onboardStartBtn'),
+        onboardSettingsBtn: document.getElementById('onboardSettingsBtn'),
+        replayIntroBtn: document.getElementById('replayIntroBtn')
     };
 
     // Touch/Drag State
@@ -251,6 +256,11 @@
             // Load saved state — its position tells us which chunks we need first
             let savedState = StorageManager.load();
 
+            // v3.9: the "Start Here" intro is static content with no data
+            // dependency, so show it immediately — before the item data below
+            // even starts loading — on a true first visit only.
+            if (!hasSeenOnboarding()) showOnboarding();
+
             // Load item data: the chunks covering the user's position now,
             // the rest quietly in the background.
             await DataLoader.start({
@@ -354,6 +364,29 @@
             return true;
         }
         return false;
+    }
+
+    /**
+     * v3.9 — "Start Here" first-visit intro overlay.
+     * Deliberately its OWN localStorage key (like the Diary's collapsed-section
+     * memory), not a field on the shared progress state: it's a per-device "have
+     * they seen the explainer" flag, not something that should ever travel
+     * through a backup/QR/share code or reset when progress resets.
+     */
+    const ONBOARD_KEY = 'pj_onboarded';
+    function hasSeenOnboarding() {
+        try { return localStorage.getItem(ONBOARD_KEY) === '1'; }
+        catch (e) { return true; } // storage blocked (private mode etc.) — don't force it every load
+    }
+    function markOnboardingSeen() {
+        try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (e) { /* ignore */ }
+    }
+    function showOnboarding() {
+        if (elements.onboardOverlay) elements.onboardOverlay.classList.remove('hidden');
+    }
+    function closeOnboarding() {
+        if (elements.onboardOverlay) elements.onboardOverlay.classList.add('hidden');
+        markOnboardingSeen();
     }
 
     /**
@@ -1216,6 +1249,20 @@
             elements.backupModal.querySelector('.backup-overlay')?.addEventListener('click', closeBackupModal);
         }
 
+        // ===== Start Here intro (v3.9) =====
+        if (elements.onboardStartBtn) {
+            elements.onboardStartBtn.addEventListener('click', closeOnboarding);
+        }
+        if (elements.onboardSettingsBtn) {
+            // The tab switch itself is handled by UIShell's existing [data-go]
+            // wiring on this same button — this just dismisses the overlay and
+            // remembers it's been seen.
+            elements.onboardSettingsBtn.addEventListener('click', closeOnboarding);
+        }
+        if (elements.replayIntroBtn) {
+            elements.replayIntroBtn.addEventListener('click', showOnboarding);
+        }
+
         // ===== Decade picker (v3.3) =====
         if (elements.decadeBadge) {
             elements.decadeBadge.addEventListener('click', openDecadePicker);
@@ -1910,6 +1957,7 @@ ${baseUrl}`;
     function canReviewByKey() {
         const active = document.querySelector('.pj-screen.active');
         if (active && active.dataset.screen && active.dataset.screen !== 'review') return false;
+        if (elements.onboardOverlay && !elements.onboardOverlay.classList.contains('hidden')) return false;
         if (elements.decadeOverlay && !elements.decadeOverlay.classList.contains('hidden')) return false;
         if (elements.statsOverlay && !elements.statsOverlay.classList.contains('hidden')) return false;
         if (elements.modalOverlay && !elements.modalOverlay.classList.contains('hidden')) return false;
@@ -1930,6 +1978,10 @@ ${baseUrl}`;
 
         // Close overlays on Escape (decade picker applies its selection)
         if (e.key === 'Escape') {
+            if (elements.onboardOverlay && !elements.onboardOverlay.classList.contains('hidden')) {
+                closeOnboarding();
+                return;
+            }
             if (elements.decadeOverlay && !elements.decadeOverlay.classList.contains('hidden')) {
                 closeAndApplyDecadePicker();
                 return;

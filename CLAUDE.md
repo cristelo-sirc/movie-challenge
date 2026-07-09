@@ -76,7 +76,62 @@ Commit normally; push with the token; route merges and locked-index situations a
 no-delete rule with rename + in-place overwrite + a `/tmp` index; sweep `*.lock` into
 `.git/.trash/` before and after. Then tell Cris it's done — because it is.
 
+### Versioning (verified 2026-07-07)
+The displayed version lives in exactly ONE place: `index.html` line ~290
+(`<p class="pj-version">Poster Journal · v3.x.x</p>`). Every other `v3.x` string in the
+codebase is a historical code comment — leave those alone. When releasing, update that one
+line. (Checked across index.html, js/, and config/ — no other live version references exist,
+so unlike the Retirement Calculator this project needs no bump script.)
+
 ---
+
+## Session: "Start Here" first-visit onboarding overlay (Jul 2026) — v3.9.0
+
+Verified-then-built request: Cris pasted a design mockup/proposal (a first-visit
+"Start Here" overlay over the Review screen) that another AI had framed as fixing
+the app's onboarding gap. Ran it through the audit-triage process before touching
+code: confirmed the gap was real (grepped the whole codebase — no tutorial/
+onboarding/welcome flow existed anywhere), confirmed the design was a clean fit
+with existing patterns, then built it once Cris approved.
+
+- **New overlay** (`#onboardOverlay`, reuses the existing `.modal-overlay`/`.modal`
+  dark cinematic styling — same one the decade picker uses, so no new visual
+  system needed). Content: "Start Here" eyebrow, serif headline, 3 numbered steps
+  (Rate the poster / Explore a movie / See your story grow), and two buttons —
+  **Start reviewing** (dismiss only) and **Go to Settings first** (dismiss +
+  jump to Settings). New CSS block in `styles.v34.css` (`.pj-onboard*`).
+- **Shows on a true first visit only**, tracked by its own standalone
+  localStorage key `pj_onboarded` (same pattern as the Diary's `pj_wl_collapsed`)
+  — deliberately NOT a field on the shared progress state, so it can never
+  travel through a backup/QR/share code and never gets reset by "Reset all
+  progress." `hasSeenOnboarding()`/`markOnboardingSeen()`/`showOnboarding()`/
+  `closeOnboarding()` in `js/app.js`.
+- **Shows independent of data loading** — checked right after
+  `StorageManager.load()` at the top of `init()`, before the `await
+  DataLoader.start(...)` — so it appears before the poster/spinner, not after.
+- **"Go to Settings first" reuses existing plumbing**: the button just carries
+  `data-go="settings"`, which `UIShell.wireNav()` already wires up for every
+  such button in the app — no new navigation code needed.
+- **Gated like the other overlays**: added to `canReviewByKey()` (blocks
+  keyboard rating while showing) and the Escape-to-close handler in
+  `handleKeyboard`, matching the decade picker/stats screen convention.
+- **Reopenable anytime**: new "Help" section in Settings with a "Show the intro
+  again" row (`#replayIntroBtn`) that calls `showOnboarding()` directly (doesn't
+  touch the `pj_onboarded` flag either way).
+- Cache-bust `?v=43 → ?v=44`; label `v3.8.2 → v3.9.0`; `package.json` 3.9.0.
+- Validation: extended the harness 49 → 61 checks (all new ones cover the
+  overlay: auto-shows on first visit, stays hidden on return visits, both
+  buttons dismiss + persist the flag, Settings tab-jump works, keyboard rating
+  blocked while showing and restored after dismiss, Settings can replay it) +
+  `node --check js/app.js` + `node --check test/run.js`, all green.
+- One pre-existing test needed a fix, not a new bug: the off-screen/year-card
+  keyboard-gating section booted with no seeded state, so the new overlay was
+  (correctly) blocking its simulated keypresses. Seeded `pj_onboarded:'1'` in
+  that boot() call so it tests what it always tested, isolated from the new
+  feature.
+- Can't verify in this sandbox (needs Cris's eyes on a real device, same
+  caveat as every prior visual pass): exact spacing/scroll on a small phone,
+  and that the two-button stack doesn't crowd a short screen.
 
 ## Session: Watch panel tap-to-flip-back fix (Jun 2026) — v3.8.2
 

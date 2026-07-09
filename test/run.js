@@ -193,7 +193,11 @@ async function run() {
     SECTION('Phase 2 — off-screen + year-card keyboard gating');
     // ===================================================================
     {
-        const app = await boot();
+        // v3.9: seed "already onboarded" so the new Start Here overlay isn't
+        // covering the screen here — this section tests the PRE-EXISTING
+        // off-screen/year-card gates, not the new intro (which gets its own
+        // section below).
+        const app = await boot({ localStorage: { pj_onboarded: '1' } });
         const { window: w, document: d } = app;
         const key = (k) => d.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
 
@@ -374,6 +378,70 @@ async function run() {
         ok('clicking again collapses it', sec.classList.contains('collapsed'));
         stored = JSON.parse(w.localStorage.getItem('pj_wl_collapsed') || '{}');
         ok('collapsed choice is remembered (true)', stored[era] === true, JSON.stringify(stored));
+        app.close();
+    }
+
+    // ===================================================================
+    SECTION('v3.9 — Start Here first-visit onboarding overlay');
+    // ===================================================================
+    {
+        // True first visit: no pj_onboarded key at all → overlay shows automatically.
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const overlay = () => d.getElementById('onboardOverlay');
+        ok('shows automatically on a true first visit', !overlay().classList.contains('hidden'));
+
+        // "Start reviewing" dismisses it, remembers it, and doesn't touch ratings/tabs.
+        const seenBefore = SW(w).getProgress().seen;
+        click(d.getElementById('onboardStartBtn'));
+        ok('"Start reviewing" hides the overlay', overlay().classList.contains('hidden'));
+        ok('dismissing does not rate the visible card', SW(w).getProgress().seen === seenBefore);
+        ok('remembers it was seen (pj_onboarded)', w.localStorage.getItem('pj_onboarded') === '1');
+        ok('stays on the Review tab', d.querySelector('.pj-screen.active').dataset.screen === 'review');
+        app.close();
+    }
+    {
+        // Return visit: pj_onboarded already set → overlay must NOT show.
+        const app = await boot({ localStorage: { pj_onboarded: '1' } });
+        const { document: d } = app;
+        ok('stays hidden on a return visit', d.getElementById('onboardOverlay').classList.contains('hidden'));
+        app.close();
+    }
+    {
+        // "Go to Settings first" dismisses it AND jumps to the Settings tab
+        // (reusing UIShell's existing [data-go] tab-switch wiring).
+        const app = await boot();
+        const { window: w, document: d } = app;
+        click(d.getElementById('onboardSettingsBtn'));
+        await sleep(30);
+        ok('"Go to Settings first" hides the overlay', d.getElementById('onboardOverlay').classList.contains('hidden'));
+        ok('"Go to Settings first" switches to the Settings tab', d.querySelector('.pj-screen.active').dataset.screen === 'settings');
+        ok('remembers it was seen (pj_onboarded)', w.localStorage.getItem('pj_onboarded') === '1');
+        app.close();
+    }
+    {
+        // Keyboard rating is blocked while the intro covers the screen, and
+        // works normally again once dismissed (same gate as the decade picker
+        // and year takeover).
+        const app = await boot();
+        const { window: w, document: d } = app;
+        const key = (k) => d.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
+        const seen = SW(w).getProgress().seen;
+        key('d'); await sleep(250);
+        ok('rating key ignored while the intro is showing', SW(w).getProgress().seen === seen);
+        click(d.getElementById('onboardStartBtn'));
+        key('d'); await sleep(250);
+        ok('rating key works after the intro is dismissed', SW(w).getProgress().seen === seen + 1);
+        app.close();
+    }
+    {
+        // Settings has a "Show the intro again" row that reopens it on demand,
+        // without needing to reset pj_onboarded.
+        const app = await boot({ localStorage: { pj_onboarded: '1' } });
+        const { window: w, document: d } = app;
+        w.UIShell.switchTo('settings');
+        click(d.getElementById('replayIntroBtn'));
+        ok('Settings can reopen the intro on demand', !d.getElementById('onboardOverlay').classList.contains('hidden'));
         app.close();
     }
 
